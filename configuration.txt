@@ -1,0 +1,5 @@
+# BoardID, Adapter Channel, Type (RPi,S20), Server, list of Mezzanines
+1, 2, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0, PM_1_A 1.0
+#7, 1, RPi, localhost:1338, APM_2_5 2.5, PM_1_A 1.0
+#1, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+10, 2, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0

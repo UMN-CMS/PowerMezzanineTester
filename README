@@ -1,0 +1,57 @@
+=== uHTR Power Mezzanine Test Software ===
+
+= 0 = Quick Start
+
+The test software can be installed by using the provided "install.sh" script.  This script will download the necessary libraries and compile them alon with the main code.  This script need only be run once but it produces another script to set the environment variables necessary to run the test software.  
+
+After it is compilied and the environment variables are set you can run the test software with
+
+./uHTR_PowerMezz_Test.exe
+
+This will list the avaliable options.  The software is capable of reading and writing to the mezzanine eeproms as well as performing a stress test of the mezzanines.  
+
+= 1 = Design 
+
+This program is desigend to monitor the uHTR Power and Auxiliary Power Modules for long term (~20 hour) stability tests.  The program is designed to work with a module test board through which it communicates using usb.  The Test board contains a SUB-20 usb interface which includes an i2c communication module as well as analog inputs, digital I/O ports, and other communication standards.  The power modules reside on a multipurpose test board which supplies power, allows for i2c communication, and allows for easy mounting of load resistors.  Both of these modules are then placed on a base board which connects the i2c connections, supplies power, and holds a cooling fan for the power mudules and resistors.  
+
+The power moudules are monitored through the i2c bus which allows access to an onboard eeprom containing the ID and ancilary information, 2 ADCs for monitoring temperature, voltages, and currents, as well as a digital I/O chip.  Further voltages are monitored by an ADC directly on the SUB-20 interface.  
+
+During a test the power modules are inserted into the approperiate places on the test board and it is powered on.  The test sorfware is then started and a quick test of margin up and margin down mode (setting the output voltage 5% high or low) are conducted followed by a long test of the nominal settings.  During each test the output voltages, currents, power, and temperature of the modules are recoreded every 10 seconds.  At the end of every test the average and extremum values of every quantity are used to evaluate the worthyness of the modules which are recorded in an output database.  
+
+= 2 = Software Installation 
+
+To install the test software on a linux installation two additional libraries are required, the libusb library for interfacing with usb in linux as well as the libsub library for interfacing with the SUB-20 module.  These libraries can be downloaded here
+
+SUB-20 module
+http://www.xdimax.com/sub20/sub20.html
+
+libusb
+http://www.libusb.org/
+
+Both of these libraries should be installed according to their respective instructions.  (If you are running on a user node without root access when installing the libusb library you should add '--prefix=$PWD' in the configure command to instruct the installer to use the current folder.)  
+
+Once these libraries are installed there are 2 variables in the makefile for the uHTR powermod test program which must be updated to point to the install directories for each library.  After this, a single call to 'make' should compile the code into an executable called 'uHTR_PowerMod_Test.out'.  The following source files are required
+
+uHTR_PowerMod_Test.cpp
+uHTRPowerModInterface.h
+uHTRPowerModInterface.cpp
+
+In order to run the executable on some systems it may be required to add the paths to the "libusb" and "libsub" libraries to the system variable "LD_LIBRARY_PATH".  In bash, this is accomplished with a command like the following
+
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${PWD}/libusb-1.0.9/lib/:${PWD}/SUB-20-snap-110319/lib/
+
+The code may be run by calling the executable 'uHTR_PowerMod_Test.out'.
+
+= 3 = Hardware Configuration
+
+The uHTR power module test board is powered with 12V supplied through the base board.  This supplies power to the power modules as well as the cooling fan.  The power modules are powered as soon as the 12V power is connected, though the module output is disabled by default. The SUB-20 interface board is powered through its usb connection to the computer and connects to the power module test board through a 34 pin connector to the baseboard.  The power module test board contains slots for one power module and one aux power module.  Each module has a set of cage clamps for mounting load resistors approperiate for testing each module.  These resistors must be carefully chosen to approperiately load each module.
+
+= 4 = Test Procedure 
+
+To test a uHTR power module the 12 V power to the base board should be disabled and the modules inserted into the approperiatly labeled slots.  The test board can accomidate one power module and one auxiliary power module, but the test can be conducted with either or both.  Once the modules are securely seated in their sockets, the 12 V power should be enabled.  At this point the hardware is ready to go.  
+
+The test program which was compilied above ("uHTR_PowerMod_Test.out") can be run to conduct a long term test of the modules.  The standard test cycle consists of 3 phases where margin up, margin down, and nominal voltage output settings are tested.  Each of these 3 tests is conducted in the same way except for the margin settings (which are adjusted automatically).  Each test measures the output voltage, total module power, module temperature and other parameters every ten seconds for its duration.  Caution should be taken as the power modules and their load resistors become very hot during the testing process.  
+
+A test is not stopped if a value drifts out of range.  A test is only stopped in the case where an unsafe operating condition is detected.  These conditions as implemented are either power module drawing more than 30 W of input power or either module registering a temperature of more than 90 C.  In the case either of these thresholds are passed the test is aborted and the power module outputs are disabled.
+
+At the end of each test the stability performance is evaluated and a summary of the module is made in the approperiate summary file ("PowerModSummary.txt" and/or "AuxPowerModSummary.txt").  The summary file contains the test type, the module ID, pass/fail info, the min, average, and max output voltage, and test completion time.  A full report of each value read is kept in a seperate file labeled as "PowerMod-[PM ID].txt" or "AuxPowerMod-[APM ID].txt".
