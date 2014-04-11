@@ -451,23 +451,14 @@ int main(int argc, char* argv[])
 
 void  INThandler(int sig)
 {
-    char  c;
-
     signal(sig, SIG_IGN);
-    printf("OUCH, did you hit Ctrl-C?\n"
-            "Do you really want to quit? [y/n] ");
-    c = getchar();
-    if (c == 'y' || c == 'Y')
-    {
-        printf("Turning of power to Mezzanines\n");
-        Mezzanines * mezzanines = Mezzanines::Instance();
-        mezzanines->setPrimaryLoad(false, false);
-        mezzanines->setSecondaryLoad(false, false, false, false);
-        mezzanines->setRun(false);
-        exit(0);
-    }
-    else
-        signal(SIGINT, INThandler);
+
+    printf("Turning of power to Mezzanines\n");
+    Mezzanines * mezzanines = Mezzanines::Instance();
+    mezzanines->setPrimaryLoad(false, false);
+    mezzanines->setSecondaryLoad(false, false, false, false);
+    mezzanines->setRun(false);
+    exit(0);
 }
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
