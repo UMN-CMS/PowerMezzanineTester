@@ -29,8 +29,6 @@ const double PM_VB_NOM = 12.0;
 double APM_VOUT_NOM = 1.8;
 const double APM_VC_NOM = 12.0;
 
-boost::mutex s20mtx_;
-
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines);
 void help();
 
@@ -281,7 +279,7 @@ int main(int argc, char* argv[])
     }
 
     // Initialize list of mezzanines 
-    Mezzanines * mezzanines = Mezzanines::Instance(&s20mtx_);
+    Mezzanines * mezzanines = Mezzanines::Instance();
 
     // Load configuration file    
     char buff[4096];
@@ -451,10 +449,31 @@ int main(int argc, char* argv[])
 // Test procedures for uHTR POWER MODULE and uHTR AUX_POWER MODULE
 //======================================================================
 
+void  INThandler(int sig)
+{
+    char  c;
+
+    signal(sig, SIG_IGN);
+    printf("OUCH, did you hit Ctrl-C?\n"
+            "Do you really want to quit? [y/n] ");
+    c = getchar();
+    if (c == 'y' || c == 'Y')
+    {
+        printf("Turning of power to Mezzanines\n");
+        Mezzanines * mezzanines = Mezzanines::Instance();
+        mezzanines->setPrimaryLoad(false, false);
+        mezzanines->setSecondaryLoad(false, false, false, false);
+        mezzanines->setRun(false);
+        exit(0);
+    }
+    else
+        signal(SIGINT, INThandler);
+}
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
     int i, status;
     if (mezzanines->empty()) return RETVAL_NO_MEZZ_SPEC;
+    signal(SIGINT, INThandler);
 
     int adChan = mezzanines->front()->get_adChan();
 

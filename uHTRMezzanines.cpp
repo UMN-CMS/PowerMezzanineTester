@@ -930,11 +930,13 @@ bool APM::passed()
 
 Mezzanines * Mezzanines::pM = NULL;
 
-Mezzanines * Mezzanines::Instance(boost::mutex * s20mtx)
+Mezzanines * Mezzanines::Instance()
 {
     if(!pM)
+    {
         pM = new Mezzanines();
-    pM->s20mtx_ = s20mtx;
+        pM->s20mtx_ = new boost::mutex();
+    }
     return pM;
 }
 
