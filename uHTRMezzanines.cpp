@@ -1025,7 +1025,7 @@ void Mezzanines::readEeprom()
     {
         boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
-        if(!(*iM)->isPM) (*iM)->readEeprom();
+        (*iM)->readEeprom();
     }
 
 }
@@ -1036,7 +1036,7 @@ void Mezzanines::print()
     for(iM = begin(); iM != end(); ++iM)
     {
         boost::mutex::scoped_lock l(*s20mtx_);
-        if(!(*iM)->isPM) (*iM)->print();
+        (*iM)->print();
     }
 
 }
