@@ -186,7 +186,7 @@ APM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV
 class Mezzanines : public std::vector<Mezzanine*>
 {
     public:
-        static Mezzanines * Instance(boost::mutex * s20mtx);
+        static Mezzanines * Instance();
         unsigned int monitor();
         void setMargins(const int margin, const int l = 1);
         void setRun(const bool run);
