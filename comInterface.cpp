@@ -132,16 +132,18 @@ double S20Interface::read_adc(int chan)
 
 using boost::asio::ip::tcp;
 
+boost::asio::io_service * RPiInterface::io_service = NULL;
+
 RPiInterface::RPiInterface(std::string host, std::string port) 
 {
 #ifdef URPI
-    io_service = new boost::asio::io_service();
+    if(io_service == NULL)
+        io_service = new boost::asio::io_service();
 
     tcp::resolver resolver(*io_service);
     tcp::resolver::query query(tcp::v4(), host, port);
     iterator = resolver.resolve(query);
 
-    configADC128();
 #else
     std::cerr << "RPI NOT INSTALLED!\n";
 #endif
@@ -150,9 +152,9 @@ RPiInterface::RPiInterface(std::string host, std::string port)
 int RPiInterface::i2c_write(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    open_socket();
-    send_header(sa,WRITE,sz);
+    if(!open_socket()) return 1;
 
+    send_header(sa,WRITE,sz);
     boost::asio::write(*s, boost::asio::buffer(buf, sz));
 
     errno_ = recieve_error();
@@ -168,7 +170,7 @@ int RPiInterface::i2c_write(int sa, char * buf, int sz)
 int RPiInterface::i2c_read(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    open_socket();
+    if(!open_socket()) return 1;
     send_header(sa,READ,sz);
 
     boost::asio::read(*s, boost::asio::buffer(buf,sz));
@@ -186,23 +188,41 @@ void RPiInterface::lcd_write(char * buf, int sz)
 #ifdef URPI
     sz--;
     buf++;
-    open_socket();
+    if(!open_socket()) return;
     send_header(0,DISPLAY,sz);
 
     boost::asio::write(*s, boost::asio::buffer(buf, sz));
 
-    int ret = recieve_error();
+    errno_ = recieve_error();
+
     s->close();
     delete s;
 #endif
 }
 
-void RPiInterface::open_socket()
+bool RPiInterface::can_connect()
+{
+#ifdef URPI
+    tcp::socket sock(*io_service);
+    boost::system::error_code error = boost::asio::error::host_not_found;
+    sock.connect(*iterator,error);
+    sock.close();
+
+    return !error;
+#endif
+    return false;
+}
+
+bool RPiInterface::open_socket()
 {
 #ifdef URPI
     s =  new tcp::socket(*io_service);
-    s->connect(*iterator);
+    boost::system::error_code error = boost::asio::error::host_not_found;
+    s->connect(*iterator,error);
+
+    return !error;
 #endif
+    return false;
 }
 
 void RPiInterface::send_header(int address, Mode mode, int length)

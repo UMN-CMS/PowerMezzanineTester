@@ -131,7 +131,7 @@ public:
     Mezzanine(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, const bool ispm, bool V2, int aMuxAdd = -1);
     virtual ~Mezzanine();
 
-    virtual unsigned int monitor() = 0;
+    virtual unsigned int monitor(bool passive = false) = 0;
     virtual void setMargins(const int margin, const int l = 1);
     virtual void setRun(const bool run);
     virtual void setPrimaryLoad(const bool p, const bool s) = 0;
@@ -157,7 +157,7 @@ public:
 PM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, true, isV2, aMuxAddr)
     {
     }
-    unsigned int monitor();
+    unsigned int monitor(bool passive = false);
     void setPrimaryLoad(const bool p, const bool s);
     bool programEeprom(const std::string tester, const std::string site);
     void print();
@@ -166,43 +166,41 @@ PM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2
 
 class APM : public Mezzanine
 {
-private:
-    FILE *f_apm_sum;
-public:
+    private:
+        FILE *f_apm_sum;
+        bool is_init;
+    public:
 
-APM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, false, isV2, aMuxAddr)
-    {
-        s.setMUXChannel(muxAddress, aMuxAddr);
-        s.configADC128();
-    }
-    unsigned int monitor();
-    void setPrimaryLoad(const bool p, const bool s);
-    void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
-    bool programEeprom(const std::string tester, const std::string site);
-    void print();
-    bool passed();
+        APM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, false, isV2, aMuxAddr) { is_init = false; }
+        unsigned int monitor(bool passive = false);
+        void setPrimaryLoad(const bool p, const bool s);
+        void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
+        bool programEeprom(const std::string tester, const std::string site);
+        void print();
+        bool passed();
+        bool init();
 };
 
 class Mezzanines : public std::vector<Mezzanine*>
 {
     public:
-        static Mezzanines * Instance();
-        unsigned int monitor();
+        Mezzanines(boost::mutex * s20mtx) : s20mtx_(s20mtx) {}
+        unsigned int monitor(bool passive = false);
         void setMargins(const int margin, const int l = 1);
         void setRun(const bool run);
         void setPrimaryLoad(const bool p, const bool s);
         void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
         bool labelPM(const std::string tester, const std::string site);
         bool labelAPM(const std::string tester, const std::string site);
+        bool config_APM();
         void readEeprom();
 
+        int init();
 
         void print();
         void displayAndSleep(uHTRPowerMezzInterface& s20);
 
     private:
-        Mezzanines() {}
-        static Mezzanines * pM;
         boost::mutex * s20mtx_;
         
 };

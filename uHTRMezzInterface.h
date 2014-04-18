@@ -35,6 +35,9 @@ public:
     
     void updateSUB20Display(const char *);
     void togglePowerMezzs(const bool); 
+
+    bool can_connect();
+    void init();
     
     inline unsigned int getError()
     {

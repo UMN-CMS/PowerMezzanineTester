@@ -7,6 +7,11 @@ public:
     virtual double read_adc(int chan) = 0;
     virtual void lcd_write(char *,int) = 0;
     virtual void set_adChan(int adChan) {}
+
+    virtual bool can_connect() {return false;}
+    virtual void configADC128() {} 
+
+    virtual bool isRPi() = 0;
     int getError()
     {
 	return errno_;
@@ -29,6 +34,7 @@ public:
     int i2c_read(int sa, char * buf, int sz);
     double read_adc(int chan);
     void lcd_write(char *,int sz);
+    bool isRPi() {return false;}
 
 #ifdef USUB20
 private:
@@ -62,14 +68,17 @@ public:
     double read_adc(int chan);
     void lcd_write(char *,int sz); //RPi has no LCD display so write to std::cout
     void set_adChan(int adChan) { adChan_ = adChan; }
+    bool isRPi() {return true;}
 
+    bool open_socket();
+    bool can_connect();
+
+    void configADC128();
 
 private:
-    void open_socket();
     void send_header(int address, Mode mode, int sz);
     int recieve_error();
-    void configADC128();
-    boost::asio::io_service * io_service;
+    static boost::asio::io_service * io_service;
     boost::asio::ip::tcp::resolver::iterator iterator;
     boost::asio::ip::tcp::socket * s;
     int adChan_;

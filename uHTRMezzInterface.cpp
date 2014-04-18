@@ -42,7 +42,6 @@ uHTRMezzInterface::uHTRMezzInterface(int idev, bool v2, bool isRPi, char host[],
     com = 0;
     if(isRPi)
     {
-        std::cout << "connecting to " << host << ":"<< port << std::endl;
 	com = new RPiInterface(host,port);
     }
     else 
@@ -73,6 +72,7 @@ int uHTRMezzInterface::setMUXChannel(const int bbChan, const int adChan)
 
     if(isRPi_ && adChan >= 0)
     {
+        if (!com->can_connect()) return 1;
         com->set_adChan(adChan);
     }
 
@@ -136,3 +136,13 @@ void uHTRMezzInterface::updateSUB20Display(const char * dbuf)
     return;
 }
 
+void uHTRMezzInterface::init()
+{
+    com->configADC128();
+    errval_ = com->getError();
+}
+
+bool uHTRMezzInterface::can_connect()
+{
+    return com->can_connect();
+}

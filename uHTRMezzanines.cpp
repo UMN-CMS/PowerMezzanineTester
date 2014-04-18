@@ -226,7 +226,7 @@ void Mezzanine::Summary::translateStatus(const unsigned int status, char *error)
     else if(status & RETVAL_NO_MODLE_DETECTED)  sprintf(error, "NO MOD");
 }
 
-unsigned int PM::monitor()
+unsigned int PM::monitor(bool passive)
 {
     double p_temp = 0.0, p_vout = 0.0;
     double I_A = 0.0, V_A = 0.0, I_B = 0.0, V_B = 0.0;
@@ -235,18 +235,18 @@ unsigned int PM::monitor()
     // PCA9544A; SLAVE ADDRESS: 1110 000
     s20.setMUXChannel(muxAddr, aMuxAddr);
 
-    s20.updateSUB20Display("\fFinished setMUXChannel");
+    if(!passive) s20.updateSUB20Display("\fFinished setMUXChannel");
     //--------------------------------------------------------------------
     // Print POWER MODULE MAC address
     //--------------------------------------------------------------------
     // 24AA02E48T; SLAVE ADDRESS: 1010 000
     if(!s20.readMezzMAC())
     {
-        s20.updateSUB20Display("\fMAC ADDRESS OK");
+        if(!passive) s20.updateSUB20Display("\fMAC ADDRESS OK");
         s20.copyMezzMAC(actTest->MAC);
 
         // Open pm file if not open already
-        if(f_detail == NULL)
+        if(f_detail == NULL && !passive)
         {
             char fname[128];
             sprintf(fname, "PowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
@@ -254,17 +254,20 @@ unsigned int PM::monitor()
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_A", "V_A", "I_B", "V_B", "Total Power");
         }
 
-        // Print Timestamp
-        time_t epch = time(0);
-        char ts[128];
-        int i = 0;
-        sprintf(ts, "%s", asctime(gmtime(&epch)));
-        while(ts[i] != '\n') i++;
-        ts[i] = '\0';
+        if(!passive)
+        {
+            // Print Timestamp
+            time_t epch = time(0);
+            char ts[128];
+            int i = 0;
+            sprintf(ts, "%s", asctime(gmtime(&epch)));
+            while(ts[i] != '\n') i++;
+            ts[i] = '\0';
 
-        fprintf(f_detail, "%25s, ", ts);
-        // Print MAC
-        fprintf(f_detail, "%02x:%02x:%02x:%02x:%02x:%02x, ", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+            fprintf(f_detail, "%25s, ", ts);
+            // Print MAC
+            fprintf(f_detail, "%02x:%02x:%02x:%02x:%02x:%02x, ", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+        }
 
         //--------------------------------------------------------------------
         // Print POWER MODULE temperature
@@ -274,7 +277,7 @@ unsigned int PM::monitor()
         // 2.048V reference -> 1 mV per LSB
         if(isV2) p_temp = 25 + (s20.readMezzADC(V2_MEZZ_ADC, 1) - 750.0) / 10.0;
         else     p_temp = 25 + (s20.readMezzADC(ADC_26, 1) - 750.0) / 10.0;
-        fprintf(f_detail, "%5.1f C, ", p_temp);
+        if(!passive) fprintf(f_detail, "%5.1f C, ", p_temp);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE V_OUT voltage
@@ -284,7 +287,7 @@ unsigned int PM::monitor()
         // 2.048V reference -> 1 mV per LSB
         if(isV2) p_vout = 4.322 * s20.readMezzADC(V2_MEZZ_ADC, 2) / 1000;
         else     p_vout = 4.322 * s20.readMezzADC(ADC_26, 2) / 1000;
-        fprintf(f_detail, "%7.3f V, ", p_vout);
+        if(!passive) fprintf(f_detail, "%7.3f V, ", p_vout);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE PGOOD status
@@ -296,7 +299,7 @@ unsigned int PM::monitor()
         // Channel 2: MARG_UP
         // Channel 3: MARG_DWN
         s20.readMarginPGood(&p_margup, &p_margdn, &p_pgood);
-        fprintf(f_detail, "%5d, %7d, %7d, %5d, ", p_pgood, p_margup, p_margdn, load);
+        if(!passive) fprintf(f_detail, "%5d, %7d, %7d, %5d, ", p_pgood, p_margup, p_margdn, load);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE I_A voltage
@@ -314,7 +317,7 @@ unsigned int PM::monitor()
             // 2.048V reference -> 1 mV per LSB
             I_A = 2 * s20.readMezzADC(ADC_28, 1) / 1000;
         }
-        fprintf(f_detail, "%7.3f A, ", I_A);
+        if(!passive) fprintf(f_detail, "%7.3f A, ", I_A);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE V_A voltage
@@ -332,7 +335,7 @@ unsigned int PM::monitor()
             // 2.048V reference -> 1 mV per LSB
             V_A = 18.647 * s20.readMezzADC(ADC_28, 2) / 1000;
         }
-        fprintf(f_detail, "%7.3f V, ", V_A);
+        if(!passive) fprintf(f_detail, "%7.3f V, ", V_A);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE I_B voltage
@@ -350,7 +353,7 @@ unsigned int PM::monitor()
             // 2.048V reference -> 1 mV per LSB
             I_B = 2 * s20.readMezzADC(ADC_28, 3) / 1000;
         }
-        fprintf(f_detail, "%7.3f A, ", I_B);
+        if(!passive) fprintf(f_detail, "%7.3f A, ", I_B);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE V_B current
@@ -368,14 +371,14 @@ unsigned int PM::monitor()
             // 2.048V reference -> 1 mV per LSB
             V_B = 18.647 * s20.readMezzADC(ADC_28, 4) / 1000;
         }
-        fprintf(f_detail, "%7.3f V, ", V_B);
+        if(!passive) fprintf(f_detail, "%7.3f V, ", V_B);
 
         //--------------------------------------------------------------------
         // Print POWER MODULE total power:  (I_A * V_A) + (I_B * V_B)
         //--------------------------------------------------------------------
-        fprintf(f_detail, "%7.3f W\n", (I_A * V_A) + (I_B * V_B));
+        if(!passive) fprintf(f_detail, "%7.3f W\n", (I_A * V_A) + (I_B * V_B));
 
-        fflush(f_detail);
+        if(!passive) fflush(f_detail);
 
         //--------------------------------------------------------------------
         // Check POWER MODULE balance.
@@ -431,7 +434,7 @@ unsigned int PM::monitor()
     return actTest->pass;
 }
 
-unsigned int APM::monitor()
+unsigned int APM::monitor(bool passive)
 {
     double a_temp = 0.0, a_vout = 0.0;
     double I_C = 0.0, V_C = 0.0;
@@ -449,7 +452,7 @@ unsigned int APM::monitor()
     {
         s20.copyMezzMAC(actTest->MAC);
 
-        if(f_detail == NULL)
+        if(f_detail == NULL && !passive)
         {
             char fname[128];
             sprintf(fname, "AuxPowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
@@ -457,16 +460,19 @@ unsigned int APM::monitor()
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_C", "V_C", "VADJ_A", "VADJ_B", "VADJ_C", "VADJ_D", "Total Power");
         }
 
-        // Print Timestamp
-        time_t epch = time(0);
-        char ts[128];
-        int i = 0;
-        sprintf(ts, "%s", asctime(gmtime(&epch)));
-        while(ts[i] != '\n') i++;
-        ts[i] = '\0';
-        fprintf(f_detail, "%25s, ", ts);
-        // Print MAC
-        fprintf(f_detail, "%02x:%02x:%02x:%02x:%02x:%02x, ", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+        if(!passive)
+        {
+            // Print Timestamp
+            time_t epch = time(0);
+            char ts[128];
+            int i = 0;
+            sprintf(ts, "%s", asctime(gmtime(&epch)));
+            while(ts[i] != '\n') i++;
+            ts[i] = '\0';
+            fprintf(f_detail, "%25s, ", ts);
+            // Print MAC
+            fprintf(f_detail, "%02x:%02x:%02x:%02x:%02x:%02x, ", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+        }
 
 
         //--------------------------------------------------------------------
@@ -477,7 +483,7 @@ unsigned int APM::monitor()
         // 2.048V reference -> 1 mV per LSB
         if(isV2) a_temp = 25 + (s20.readMezzADC(V2_MEZZ_ADC, 1) - 750) / 10;
         else     a_temp = 25 + (s20.readMezzADC(ADC_26, 1) - 750) / 10;
-        fprintf(f_detail, "%5.1f C, ", a_temp);
+        if(!passive) fprintf(f_detail, "%5.1f C, ", a_temp);
 
         //--------------------------------------------------------------------
         // Print AUX_POWER MODULE V_OUT voltage
@@ -487,7 +493,7 @@ unsigned int APM::monitor()
         // 2.048V reference -> 1 mV per LSB
         if(isV2) a_vout = 4.322 * s20.readMezzADC(V2_MEZZ_ADC, 2) / 1000;
         else     a_vout = 4.322 * s20.readMezzADC(ADC_26, 2) / 1000;
-        fprintf(f_detail, "%7.3f V, ", a_vout);
+        if(!passive) fprintf(f_detail, "%7.3f V, ", a_vout);
 
         //--------------------------------------------------------------------
         // Print AUX_POWER MODULE PGOOD status
@@ -499,7 +505,7 @@ unsigned int APM::monitor()
         // Channel 2: MARG_UP
         // Channel 3: MARG_DWN
         s20.readMarginPGood(&a_margup, &a_margdn, &a_pgood);
-        fprintf(f_detail, "%5d, %7d, %7d, %5d, ", a_pgood, a_margup, a_margdn, load);
+        if(!passive) fprintf(f_detail, "%5d, %7d, %7d, %5d, ", a_pgood, a_margup, a_margdn, load);
 
         //--------------------------------------------------------------------
         // Print I_C voltage.
@@ -519,7 +525,7 @@ unsigned int APM::monitor()
             // 2.048V reference -> 1 mV per LSB
             I_C = 2 * s20.readMezzADC(ADC_28, 1) / 1000;
         }
-        fprintf(f_detail, "%7.3f A, ", I_C);
+        if(!passive) fprintf(f_detail, "%7.3f A, ", I_C);
 
         //--------------------------------------------------------------------
         // Print V_C voltage.
@@ -537,7 +543,7 @@ unsigned int APM::monitor()
             // 2.048V reference -> 1 mV per LSB
             V_C = 18.647 * s20.readMezzADC(ADC_28, 2) / 1000;
         }
-        fprintf(f_detail, "%7.3f V, ", V_C);
+        if(!passive) fprintf(f_detail, "%7.3f V, ", V_C);
 
         //--------------------------------------------------------------------
         // Print Vadj voltages.
@@ -564,14 +570,14 @@ unsigned int APM::monitor()
             VADJ_C = 2 * s20.readSUB20ADC(4);
             VADJ_D = 2 * s20.readSUB20ADC(6);
         }
-        fprintf(f_detail, "%7.3f V, %7.3f V, %7.3f V, %7.3f V, ", VADJ_A, VADJ_B, VADJ_C, VADJ_D);
+        if(!passive) fprintf(f_detail, "%7.3f V, %7.3f V, %7.3f V, %7.3f V, ", VADJ_A, VADJ_B, VADJ_C, VADJ_D);
 
         //--------------------------------------------------------------------
         // Print AUX_POWER MODULE total power:  (I_C * V_C)
         //-------------------------------------------------------------------- 
-        fprintf(f_detail, "%7.3f W\n", I_C * V_C);
+        if(!passive) fprintf(f_detail, "%7.3f W\n", I_C * V_C);
 
-        fflush(f_detail);
+        if(!passive) fflush(f_detail);
     }
     else
     {
@@ -862,6 +868,21 @@ void PM::print()
     fclose(f_pm_sum);
 }
 
+bool APM::init()
+{
+    if(!is_init)
+    {
+        int error = s20.setMUXChannel(muxAddr, aMuxAddr);
+        if(error) 
+        {
+            return false;
+        }
+        s20.configADC128();
+        is_init = true;
+    }
+    return is_init;
+}
+
 void APM::print()
 {
     if(actTest->pass & RETVAL_NO_MODLE_DETECTED) return;
@@ -928,19 +949,7 @@ bool APM::passed()
     return (bool(actTest->pass == RETVAL_SUCCESS));
 }
 
-Mezzanines * Mezzanines::pM = NULL;
-
-Mezzanines * Mezzanines::Instance()
-{
-    if(!pM)
-    {
-        pM = new Mezzanines();
-        pM->s20mtx_ = new boost::mutex();
-    }
-    return pM;
-}
-
-unsigned int Mezzanines::monitor()
+unsigned int Mezzanines::monitor(bool passive)
 {
     int status = 0;
     std::vector<Mezzanine*>::iterator iM;
@@ -948,7 +957,7 @@ unsigned int Mezzanines::monitor()
     {
         boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
-        status |= (*iM)->monitor();
+        status |= (*iM)->monitor(passive);
     }
     return status;
 
@@ -1030,6 +1039,21 @@ void Mezzanines::readEeprom()
         (*iM)->readEeprom();
     }
 
+}
+
+int Mezzanines::init()
+{
+    int is_init = 1;
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM)
+    {
+        boost::mutex::scoped_lock l(*s20mtx_);
+        if(!(*iM)->isPM) 
+        {
+            is_init &= ((APM*)*iM)->init();
+        }
+    }
+    return is_init;
 }
 
 void Mezzanines::print()
