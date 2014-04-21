@@ -138,7 +138,10 @@ RPiInterface::RPiInterface(std::string host, std::string port)
 {
 #ifdef URPI
     if(io_service == NULL)
+    {
+	std::cout << "Initializing boost asio\n";
         io_service = new boost::asio::io_service();
+    }
 
     tcp::resolver resolver(*io_service);
     tcp::resolver::query query(tcp::v4(), host, port);
@@ -206,6 +209,21 @@ bool RPiInterface::can_connect()
     tcp::socket sock(*io_service);
     boost::system::error_code error = boost::asio::error::host_not_found;
     sock.connect(*iterator,error);
+
+    tcp::resolver::iterator end;
+    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+    //std::cout << "error is : " << error.message() << std::endl;
+
+    while (error && iterator != end)
+    {
+	sock.close();
+	sock.connect(*iterator++, error);
+	//std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+	//std::cout << "error is : " << error << std::endl;
+    }
+    if (error)
+	throw boost::system::system_error(error);
+
     sock.close();
 
     return !error;
@@ -283,52 +301,3 @@ double RPiInterface::read_adc(int chan)
 #endif
 }
 
-void RPiInterface::configADC128()
-{
-#ifdef URPI
-    unsigned int error = 0;
-
-    char buff[9];
-
-    // ensure mux points to the right address
-    buff[0] = 0x01;
-    error |= i2c_write(RPI_MUX_SADDRESS, buff, 1);
-
-    // Wait until chip is ready
-    buff[0] = 0x0c; //location of busy status register
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 1);
-    do
-    {
-        error |= i2c_read(RPI_ADC_SADDRESS, (char*)buff, 1);
-    } while(!error && (buff[0] & 0x02) && !usleep(100000));
-
-    // make sure adc is off
-    buff[0] = 0x00; //location of config register
-    buff[1] = 0x80; //disable and reset
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
-    
-    // Set conversion rate register 
-    buff[0] = 0x07; //location of conversion rate register
-    buff[1] = 0x01; //continous conversion rate 
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
-
-    // Mask unused channels
-    buff[0] = 0x08; //location of mask register
-    buff[1] = 0x00; //mask no channels
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
-
-    // Advanced config
-    buff[0] = 0x0b; //location of advanced config register
-    buff[1] = 0x02; //set internal ref and mode 1 for all 8 ADC in 
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
-    
-    // Start adc
-    buff[0] = 0x00; //location of config register
-    buff[1] = 0x01; //enable
-    error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
-
-    usleep(100000);
-
-    errno_ = error;
-#endif
-}

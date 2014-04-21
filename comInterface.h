@@ -9,7 +9,6 @@ public:
     virtual void set_adChan(int adChan) {}
 
     virtual bool can_connect() {return false;}
-    virtual void configADC128() {} 
 
     virtual bool isRPi() = 0;
     int getError()
@@ -73,7 +72,6 @@ public:
     bool open_socket();
     bool can_connect();
 
-    void configADC128();
 
 private:
     void send_header(int address, Mode mode, int sz);

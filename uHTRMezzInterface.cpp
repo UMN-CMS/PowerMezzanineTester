@@ -72,8 +72,11 @@ int uHTRMezzInterface::setMUXChannel(const int bbChan, const int adChan)
 
     if(isRPi_ && adChan >= 0)
     {
-        if (!com->can_connect()) return 1;
-        com->set_adChan(adChan);
+	if (!com->can_connect())
+	{
+	    return 1;
+	}
+	com->set_adChan(adChan);
     }
 
     if(isV2_)
@@ -138,8 +141,6 @@ void uHTRMezzInterface::updateSUB20Display(const char * dbuf)
 
 void uHTRMezzInterface::init()
 {
-    com->configADC128();
-    errval_ = com->getError();
 }
 
 bool uHTRMezzInterface::can_connect()

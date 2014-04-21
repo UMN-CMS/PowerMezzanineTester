@@ -43,11 +43,11 @@ LIBOBJS :=$(patsubst %.cpp,%.o,${LIBSRCS}) gnublin.o
 
 uHTR_PowerMezz_Test.exe: uHTR_PowerMezz_Test.o ${LIBOBJS}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lboost_thread -lsub -lusb-1.0 -lstdc++ -lm -o $@
-	gcc -O2 -I. $^ -lboost_system -lboost_thread -lncurses -lstdc++ -lm -o $@
+	gcc -O2 -I. $^ -lboost_system -lboost_thread -lncurses -lpthread -lstdc++ -lm -o $@
 
 uHTR_PowerMezz_Server.exe: uHTR_PowerMezz_Server.o ${LIBOBJS}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lboost_thread -lsub -lusb-1.0 -lstdc++ -lm -o $@
-	gcc -O2 -I. $^ -lboost_system -lstdc++ -lncurses -lm -o $@
+	gcc -O2 -I. $^ -lboost_system -lstdc++ -lncurses -lpthread  -lm -o $@
 
 #uHTR_ClockMezz_Test.exe: uHTR_ClockMezz_Test.o ${LIBOBJS}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lsub -lusb-1.0 -lstdc++ -lm -o $@

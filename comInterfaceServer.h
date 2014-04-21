@@ -11,6 +11,7 @@ public:
     }
 protected:
     int errno_;    
+    virtual void configADC128() {} 
 };
 
 
@@ -30,6 +31,7 @@ public:
     void lcd_write(char *, int sz);
 
 private:
+    void configADC128();
 #ifdef URPI
     gnublin_i2c i2c;
 #else
