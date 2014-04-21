@@ -34,20 +34,26 @@ all:OUTPUT
 
 OUTPUT:uHTR_PowerMezz_Test.exe uHTR_PowerMezz_Server.exe #uHTR_PowerMezz_Test_V2.exe #uHTR_ClockMezz_Test.exe uHTR_CtrlMezz_Test.exe sub20tool.exe
 
-LIBSRCS := uHTRMezzInterface.cpp uHTRPowerMezzInterface.cpp uHTRMezzanines.cpp comInterface.cpp comInterfaceServer.cpp uHTRPowerMezzMenu.cpp #uHTRClockMezzInterface.cpp 
+LIBSRCS_T := uHTRMezzInterface.cpp uHTRPowerMezzInterface.cpp uHTRMezzanines.cpp comInterface.cpp uHTRPowerMezzMenu.cpp #uHTRClockMezzInterface.cpp 
 
-LIBOBJS :=$(patsubst %.cpp,%.o,${LIBSRCS}) gnublin.o
+LIBSRCS_S :=  comInterfaceServer.cpp #uHTRClockMezzInterface.cpp 
+
+LIBOBJS_T :=$(patsubst %.cpp,%.o,${LIBSRCS_T}) gnublin.o
+LIBOBJS_S :=$(patsubst %.cpp,%.o,${LIBSRCS_S}) gnublin.o
+
+LIBHEAD_T :=$(patsubst %.cpp,%.h,${LIBSRCS_T}) gnublin.o
+LIBHEAD_S :=$(patsubst %.cpp,%.h,${LIBSRCS_S}) gnublin.o
 
 #uHTR_PowerMezz_Test_V2.exe: uHTR_PowerMezz_Test_V2.o ${LIBOBJS}
 #	gcc -O2 -I. $^ -lboost_thread -lstdc++ -lm -o $@
 
-uHTR_PowerMezz_Test.exe: uHTR_PowerMezz_Test.o ${LIBOBJS}
+uHTR_PowerMezz_Test.exe: uHTR_PowerMezz_Test.o ${LIBOBJS_T}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lboost_thread -lsub -lusb-1.0 -lstdc++ -lm -o $@
 	gcc -O2 -I. $^ -lboost_system -lboost_thread -lncurses -lpthread -lstdc++ -lm -o $@
 
-uHTR_PowerMezz_Server.exe: uHTR_PowerMezz_Server.o ${LIBOBJS}
+uHTR_PowerMezz_Server.exe: uHTR_PowerMezz_Server.o ${LIBOBJS_S}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lboost_thread -lsub -lusb-1.0 -lstdc++ -lm -o $@
-	gcc -O2 -I. $^ -lboost_system -lstdc++ -lncurses -lpthread  -lm -o $@
+	gcc -O2 -I. $^ -lboost_system -lstdc++ -lm -o $@
 
 #uHTR_ClockMezz_Test.exe: uHTR_ClockMezz_Test.o ${LIBOBJS}
 #	gcc -O2 -DLIBUSB_1_0 -I. -L$(LIBUSBBASE)/lib/ -L$(SUB20BASE)/lib/ $^ -lsub -lusb-1.0 -lstdc++ -lm -o $@
@@ -62,11 +68,11 @@ uHTR_PowerMezz_Server.exe: uHTR_PowerMezz_Server.o ${LIBOBJS}
 
 #uHTR_CtrlMezz_Test.o : uHTRCtrlMezzInterface.cpp uHTRCtrlMezzInterface.h
 
-uHTR_PowerMezz_Test.o : uHTRMezzInterface.h uHTRPowerMezzInterface.h uHTRPowerMezzMenu.h
+uHTR_PowerMezz_Test.o : ${LIBHEAD_T}
+
+uHTR_PowerMezz_Server.o : ${LIBHEAD_S}
 
 #uHTR_PowerMezz_Test_V2.o : ${LIBSRCS} uHTRMezzInterface.h uHTRPowerMezzInterface.h
-
-uHTRMezzanines.o :  uHTRMezzanines.h
 
 gnublin.o : gnublin-api/gnublin.cpp gnublin-api/gnublin.h
 	${CXX} ${CPPFLAGS} -c -o $@ gnublin-api/gnublin.cpp

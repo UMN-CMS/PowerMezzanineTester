@@ -44,8 +44,8 @@ void session(socket_ptr sock, RPiInterfaceServer rpi )
         int length = header.at(2);
         int adChan = header.at(3);
 
-        printf("%x,%i,%i,%i",address,mode,length,adChan);
-        std::cout << "hmmm\n";
+        printf("%x,%i,%i,%i\n",address,mode,length,adChan);
+
         char buff = (char)(1 << adChan);
         int error = rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
 
@@ -87,6 +87,7 @@ void server(boost::asio::io_service& io_service, short port)
     {
         socket_ptr sock(new tcp::socket(io_service));
         a.accept(*sock);
+        printf("Socket accepted\n");
         session(sock,rpi);
         delete sock;
     }
