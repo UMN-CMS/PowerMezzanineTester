@@ -216,13 +216,11 @@ bool RPiInterface::can_connect()
 
     while (error && iterator != end)
     {
-	sock.close();
-	sock.connect(*iterator++, error);
-	//std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-	//std::cout << "error is : " << error << std::endl;
+        sock.close();
+        sock.connect(*iterator++, error);
+        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+        //std::cout << "error is : " << error << std::endl;
     }
-    if (error)
-	throw boost::system::system_error(error);
 
     sock.close();
 
