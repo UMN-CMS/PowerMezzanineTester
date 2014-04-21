@@ -123,7 +123,6 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     nodelay(stdscr, TRUE);
     noecho();
     erase();
-    display();
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
@@ -278,10 +277,13 @@ void uHTRPowerMezzMenu::display()
         x=1;
 
     }
+    mvaddstr(LINES-3,2,"Which board1: ");
 }
 
 int uHTRPowerMezzMenu::start_test()
 {
+
+    mvaddstr(LINES-3,2,"Which board2: ");
     int key_code;
     if(( key_code = getch()) == ERR)
         return 0;

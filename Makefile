@@ -12,7 +12,7 @@ endif
 SEARCHDIRS :=  -I. -I$(LIBUSBBASE)/include/libusb-1.0/ -I$(SUB20BASE)/lib
 # variables
 LINKER       := g++
-DEPENDFLAGS  := -O3 -Wall ${SEARCHDIRS}
+DEPENDFLAGS  :=  -Wall ${SEARCHDIRS} -g
 TOUCHHEADERS := ${MYCODEDIR}/*.h
 
 # C

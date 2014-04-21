@@ -144,8 +144,8 @@ RPiInterface::RPiInterface(std::string host, std::string port)
     }
 
     tcp::resolver resolver(*io_service);
-    tcp::resolver::query query(tcp::v4(), host, port);
-    iterator = resolver.resolve(query);
+    query = new tcp::resolver::query(tcp::v4(), host, port);
+    iterator = resolver.resolve(*query);
 
 #else
     std::cerr << "RPI NOT INSTALLED!\n";
@@ -208,9 +208,16 @@ bool RPiInterface::can_connect()
 #ifdef URPI
     tcp::socket sock(*io_service);
     boost::system::error_code error = boost::asio::error::host_not_found;
-    sock.connect(*iterator,error);
 
     tcp::resolver::iterator end;
+
+    if(iterator == end)
+    {
+        tcp::resolver resolver(*io_service);
+        iterator = resolver.resolve(*query);
+    }
+    sock.connect(*iterator,error);
+
     //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
     //std::cout << "error is : " << error.message() << std::endl;
 
