@@ -206,32 +206,11 @@ void RPiInterface::lcd_write(char * buf, int sz)
 bool RPiInterface::can_connect()
 {
 #ifdef URPI
-    tcp::socket sock(*io_service);
-    boost::system::error_code error = boost::asio::error::host_not_found;
+    bool can_open = open_socket();
 
-    tcp::resolver::iterator end;
+    s->close();
 
-    if(iterator == end)
-    {
-        tcp::resolver resolver(*io_service);
-        iterator = resolver.resolve(*query);
-    }
-    sock.connect(*iterator,error);
-
-    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-    //std::cout << "error is : " << error.message() << std::endl;
-
-    while (error && iterator != end)
-    {
-        sock.close();
-        sock.connect(*iterator++, error);
-        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-        //std::cout << "error is : " << error << std::endl;
-    }
-
-    sock.close();
-
-    return !error;
+    return can_open;
 #endif
     return false;
 }
@@ -241,7 +220,26 @@ bool RPiInterface::open_socket()
 #ifdef URPI
     s =  new tcp::socket(*io_service);
     boost::system::error_code error = boost::asio::error::host_not_found;
+
+    tcp::resolver::iterator end;
+    if(iterator == end)
+    {
+        tcp::resolver resolver(*io_service);
+        iterator = resolver.resolve(*query);
+    }
+
     s->connect(*iterator,error);
+
+    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+    //std::cout << "error is : " << error.message() << std::endl;
+
+    while (error && iterator != end)
+    {
+        s->close();
+        s->connect(*iterator++, error);
+        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+        //std::cout << "error is : " << error << std::endl;
+    }
 
     return !error;
 #endif
