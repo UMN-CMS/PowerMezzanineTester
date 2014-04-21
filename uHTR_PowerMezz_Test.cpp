@@ -327,7 +327,11 @@ int main(int argc, char* argv[])
         {
             menu.display();
             boardID = menu.start_test();
-            if(boardID == 0) continue;
+            if(boardID == 0) 
+            {
+                sleep(1);
+                continue;
+            }
             else if(boardID == -1) menu.quit();
             runTest = true;
             quiet = true;
