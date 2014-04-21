@@ -36,6 +36,7 @@ public:
     void writeMezzEeprom(const EEPROM_data);
     void readMezzEeprom(EEPROM_data*);
     void printEEPROM_data(const EEPROM_data, const bool);
+    void configGPIO();
 };
 
 #endif

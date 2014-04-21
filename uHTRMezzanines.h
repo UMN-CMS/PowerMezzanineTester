@@ -112,7 +112,7 @@ protected:
     const int muxAddr, aMuxAddr;
     Summary margUp, margDn, margNom, hlNom;
     int margin, load;
-    bool isV2, isMaybeNotThere, isNotThere;
+    bool isV2, isMaybeNotThere, isNotThere, isInit;
 
     FILE *f_detail;
 
@@ -145,33 +145,32 @@ public:
     int get_adChan() { return aMuxAddr; }
 
     virtual void print() = 0;
+    virtual bool init() = 0;
     virtual bool passed() = 0;
 };
 
 class PM : public Mezzanine
 {
-private:
-    FILE *f_pm_sum;
-public:
+    private:
+        FILE *f_pm_sum;
+    public:
 
-PM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, true, isV2, aMuxAddr)
-    {
-    }
-    unsigned int monitor(bool passive = false);
-    void setPrimaryLoad(const bool p, const bool s);
-    bool programEeprom(const std::string tester, const std::string site);
-    void print();
-    bool passed();
+        PM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, true, isV2, aMuxAddr) {}
+        unsigned int monitor(bool passive = false);
+        void setPrimaryLoad(const bool p, const bool s);
+        bool programEeprom(const std::string tester, const std::string site);
+        void print();
+        bool passed();
+        bool init();
 };
 
 class APM : public Mezzanine
 {
     private:
         FILE *f_apm_sum;
-        bool is_init;
     public:
 
-        APM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, false, isV2, aMuxAddr) { is_init = false; }
+        APM(uHTRPowerMezzInterface& s, const int muxAddress, const double vout, bool isV2, int aMuxAddr = -1) : Mezzanine(s, muxAddress, vout, false, isV2, aMuxAddr) {}
         unsigned int monitor(bool passive = false);
         void setPrimaryLoad(const bool p, const bool s);
         void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
