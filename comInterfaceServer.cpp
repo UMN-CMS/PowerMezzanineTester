@@ -2,7 +2,7 @@
 
 
 #define RPI_MUX_SADDRESS 0x77
-#define RPI_ADC_SADDRESS 0x1e
+#define RPI_ADC_SADDRESS 0x1d
 
 RPiInterfaceServer::RPiInterfaceServer() : i2c()
 {

@@ -8,6 +8,7 @@ Mezzanine::Mezzanine(uHTRPowerMezzInterface& s, const int muxAddress, const doub
     actTest = &margNom;
     isMaybeNotThere = false;
     isNotThere = false;
+    isInit = false;
     margin = 0;
     load = 0;
     f_detail = NULL;
@@ -868,9 +869,22 @@ void PM::print()
     fclose(f_pm_sum);
 }
 
+bool PM::init()
+{
+    if(!isInit)
+    {
+        int error = s20.setMUXChannel(muxAddr, aMuxAddr);
+        if (error) return false;
+
+        s20.configGPIO();
+        isInit = true;
+    }
+    return isInit;
+}
+
 bool APM::init()
 {
-    if(!is_init)
+    if(!isInit)
     {
         int error = s20.setMUXChannel(muxAddr, aMuxAddr);
         if(error) 
@@ -878,9 +892,11 @@ bool APM::init()
             return false;
         }
         s20.configADC128();
-        is_init = true;
+
+        s20.configGPIO();
+        isInit = true;
     }
-    return is_init;
+    return isInit;
 }
 
 void APM::print()
@@ -1043,17 +1059,14 @@ void Mezzanines::readEeprom()
 
 int Mezzanines::init()
 {
-    int is_init = 1;
+    int isInit = 1;
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
         boost::mutex::scoped_lock l(*s20mtx_);
-        if(!(*iM)->isPM) 
-        {
-            is_init &= ((APM*)*iM)->init();
-        }
+        isInit &= (*iM)->init();
     }
-    return is_init;
+    return isInit;
 }
 
 void Mezzanines::print()

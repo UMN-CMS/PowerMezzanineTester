@@ -77,6 +77,7 @@ private:
     void send_header(int address, Mode mode, int sz);
     int recieve_error();
     static boost::asio::io_service * io_service;
+    boost::asio::ip::tcp::resolver::query * query;
     boost::asio::ip::tcp::resolver::iterator iterator;
     boost::asio::ip::tcp::socket * s;
     int adChan_;

@@ -123,7 +123,6 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     nodelay(stdscr, TRUE);
     noecho();
     erase();
-    display();
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
@@ -221,11 +220,13 @@ void uHTRPowerMezzMenu::display()
                   //         |1234567 1234567 1234567 | 
                   //         7         -25-           32                       57                       82                       107                      132 
 
-    mvaddstr(1,1,header1);
-    mvaddstr(2,1,header2);
-    mvaddstr(3,1,header3);
+    int yinit = 5;
+    int xinit = 5;
+    mvaddstr(yinit+1,xinit+1,header1);
+    mvaddstr(yinit+2,xinit+1,header2);
+    mvaddstr(yinit+3,xinit+1,header3);
 
-    int x = 1 , y = 4;
+    int x = xinit+1 , y = 4 + yinit;
 
     for(std::map<int,Board>::iterator board = boards.begin();
             board != boards.end();
@@ -249,23 +250,20 @@ void uHTRPowerMezzMenu::display()
 
             if(retval == RETVAL_SUCCESS)
             {
-                if(b->mezzanines->init())
+                b->mezzanines->monitor(true);
+                Mezzanines::iterator iM = b->mezzanines->begin();
+                for(;iM != b->mezzanines->end(); iM++)
                 {
-                    b->mezzanines->monitor(true);
-                    Mezzanines::iterator iM = b->mezzanines->begin();
-                    for(;iM != b->mezzanines->end(); iM++)
-                    {
-                        sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
-                        mvaddstr(y,x,buff);
-                        x+=25;
-                    }
-                    sleep(1);
+                    sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
+                    mvaddstr(y,x,buff);
+                    x+=25;
                 }
-                else
-                {
-                    sprintf(response,"%s",retmessage);
-                    fail = true;
-                }
+                sleep(1);
+            }
+            else
+            {
+                sprintf(response,"%s",retmessage);
+                fail = true;
             }
         }
         else
@@ -279,10 +277,13 @@ void uHTRPowerMezzMenu::display()
         x=1;
 
     }
+    mvaddstr(LINES-3,2,"Which board1: ");
 }
 
 int uHTRPowerMezzMenu::start_test()
 {
+
+    mvaddstr(LINES-3,2,"Which board2: ");
     int key_code;
     if(( key_code = getch()) == ERR)
         return 0;

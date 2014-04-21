@@ -144,8 +144,8 @@ RPiInterface::RPiInterface(std::string host, std::string port)
     }
 
     tcp::resolver resolver(*io_service);
-    tcp::resolver::query query(tcp::v4(), host, port);
-    iterator = resolver.resolve(query);
+    query = new tcp::resolver::query(tcp::v4(), host, port);
+    iterator = resolver.resolve(*query);
 
 #else
     std::cerr << "RPI NOT INSTALLED!\n";
@@ -206,27 +206,11 @@ void RPiInterface::lcd_write(char * buf, int sz)
 bool RPiInterface::can_connect()
 {
 #ifdef URPI
-    tcp::socket sock(*io_service);
-    boost::system::error_code error = boost::asio::error::host_not_found;
-    sock.connect(*iterator,error);
+    bool can_open = open_socket();
 
-    tcp::resolver::iterator end;
-    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-    //std::cout << "error is : " << error.message() << std::endl;
+    s->close();
 
-    while (error && iterator != end)
-    {
-	sock.close();
-	sock.connect(*iterator++, error);
-	//std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-	//std::cout << "error is : " << error << std::endl;
-    }
-    if (error)
-	throw boost::system::system_error(error);
-
-    sock.close();
-
-    return !error;
+    return can_open;
 #endif
     return false;
 }
@@ -236,7 +220,26 @@ bool RPiInterface::open_socket()
 #ifdef URPI
     s =  new tcp::socket(*io_service);
     boost::system::error_code error = boost::asio::error::host_not_found;
+
+    tcp::resolver::iterator end;
+    if(iterator == end)
+    {
+        tcp::resolver resolver(*io_service);
+        iterator = resolver.resolve(*query);
+    }
+
     s->connect(*iterator,error);
+
+    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+    //std::cout << "error is : " << error.message() << std::endl;
+
+    while (error && iterator != end)
+    {
+        s->close();
+        s->connect(*iterator++, error);
+        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
+        //std::cout << "error is : " << error << std::endl;
+    }
 
     return !error;
 #endif

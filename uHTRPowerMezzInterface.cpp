@@ -282,19 +282,40 @@ void uHTRPowerMezzInterface::readMarginPGood(bool* margup, bool* margdn, bool* p
     return;
 }
 
+void uHTRPowerMezzInterface::configGPIO()
+{
+    // Set register for control
+    buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
+    com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
+    //com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
+
+    //joe thinks these are not needed
+    //buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C0;  //set C0 to output
+    //com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set register
+
+    // Set register for output
+    buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
+    com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
+    com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
+
+    buff_[1] = (char) 0xff;
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C1;  //set C1 to output
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C2;  //set C2 to output
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C3;  //set C3 to output
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C4;  //set C4 to output
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C5;  //set C5 to output
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C6;  //set C6 to output
+
+    com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set register
+
+}
+
 void uHTRPowerMezzInterface::togglePowerMezzs(const bool state)
 {
     if(!openSuccessful_) return;
 
     if(isV2_)
     {
-        // Set register for output
-        buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
-        com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
-        com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
-        buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C0;  //set C0 to output
-        com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set register
-
         // Set output value
         buff_[0] = I2C_MARGCTRL_OUTPUT_REG;  //register address byte
         com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
@@ -320,37 +341,6 @@ void uHTRPowerMezzInterface::toggleMezzsLoad(const int channel, const bool state
 
     if(isV2_)
     {
-        // Set register for output
-        buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
-        com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
-        com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
-        switch(channel)
-        {
-            case 1:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C1;  //set C1 to output
-            	break;
-            case 2:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C2;  //set C2 to output
-            	break;
-            case 3:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C3;  //set C3 to output
-            	break;
-            case 4:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C4;  //set C4 to output
-            	break;
-            case 5:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C5;  //set C5 to output
-            	break;
-            case 6:
-            	buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C6;  //set C6 to output
-            	break;
-            default:
-            	printf("Invalid mosfet channel\n");
-            	return;
-            	
-        }
-        com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set register
-
         // Set output value
         buff_[0] = I2C_MARGCTRL_OUTPUT_REG;  //register address byte
         com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register

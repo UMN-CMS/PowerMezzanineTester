@@ -1,9 +1,9 @@
 # BoardID, Adapter Channel, Type (RPi,S20), Server, list of Mezzanines
-1, 1, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-2, 2, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-3, 3, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-4, 4, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-5, 1, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-6, 2, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#1, 1, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#2, 2, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#3, 3, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#4, 4, RPi, localhost:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#5, 1, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#6, 2, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
 7, 3, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
-8, 4, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
+#8, 4, RPi, cms1pi:1338, PM_3_3 3.3, APM_2_5 2.5, PM_1_B 1.0, APM_1_6 1.8, PM_1_A 1.0
