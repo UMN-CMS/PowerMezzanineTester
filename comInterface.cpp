@@ -132,21 +132,14 @@ double S20Interface::read_adc(int chan)
 
 using boost::asio::ip::tcp;
 
-boost::asio::io_service * RPiInterface::io_service = NULL;
-
 RPiInterface::RPiInterface(std::string host, std::string port) 
 {
 #ifdef URPI
-    if(io_service == NULL)
-    {
-	std::cout << "Initializing boost asio\n";
-        io_service = new boost::asio::io_service();
-    }
+    io_service = new boost::asio::io_service();
 
     tcp::resolver resolver(*io_service);
-    query = new tcp::resolver::query(tcp::v4(), host, port);
-    iterator = resolver.resolve(*query);
-
+    tcp::resolver::query query(tcp::v4(), host, port);
+    iterator = resolver.resolve(query);
 #else
     std::cerr << "RPI NOT INSTALLED!\n";
 #endif
@@ -155,10 +148,11 @@ RPiInterface::RPiInterface(std::string host, std::string port)
 int RPiInterface::i2c_write(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    if(!open_socket()) return 1;
-
+    open_socket();
     send_header(sa,WRITE,sz);
+
     boost::asio::write(*s, boost::asio::buffer(buf, sz));
+    printf("data sent\n");
 
     errno_ = recieve_error();
     s->close();
@@ -173,10 +167,13 @@ int RPiInterface::i2c_write(int sa, char * buf, int sz)
 int RPiInterface::i2c_read(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    if(!open_socket()) return 1;
+    open_socket();
     send_header(sa,READ,sz);
 
     boost::asio::read(*s, boost::asio::buffer(buf,sz));
+
+    printf("data recieved\n");
+
     errno_ = recieve_error();
 
     s->close();
@@ -192,59 +189,24 @@ void RPiInterface::lcd_write(char * buf, int sz)
 #ifdef URPI
     sz--;
     buf++;
-    if(!open_socket()) return;
+    open_socket();
     send_header(0,DISPLAY,sz);
 
     boost::asio::write(*s, boost::asio::buffer(buf, sz));
 
-    errno_ = recieve_error();
-
+    int ret = recieve_error();
     s->close();
     delete s;
 #endif
 }
 
-bool RPiInterface::can_connect()
-{
-#ifdef URPI
-    bool can_open = open_socket();
-
-    s->close();
-
-    return can_open;
-#endif
-    return false;
-}
-
-bool RPiInterface::open_socket()
+void RPiInterface::open_socket()
 {
 #ifdef URPI
     s =  new tcp::socket(*io_service);
-    boost::system::error_code error = boost::asio::error::host_not_found;
-
-    tcp::resolver::iterator end;
-    if(iterator == end)
-    {
-        tcp::resolver resolver(*io_service);
-        iterator = resolver.resolve(*query);
-    }
-
-    s->connect(*iterator,error);
-
-    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-    //std::cout << "error is : " << error.message() << std::endl;
-
-    while (error && iterator != end)
-    {
-        s->close();
-        s->connect(*iterator++, error);
-        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-        //std::cout << "error is : " << error << std::endl;
-    }
-
-    return !error;
+    s->connect(*iterator);
+    printf("socket opened: %d\n", s->is_open());
 #endif
-    return false;
 }
 
 void RPiInterface::send_header(int address, Mode mode, int length)
@@ -256,6 +218,7 @@ void RPiInterface::send_header(int address, Mode mode, int length)
     header[2]=length;
     header[3]=adChan_;
     boost::asio::write(*s, boost::asio::buffer(header, 4*sizeof(int)));
+    printf("header sent: %x, %i, %i, %i\n", address,mode,length,adChan_);
 #endif
 }
         
@@ -263,7 +226,9 @@ int RPiInterface::recieve_error()
 {
 #ifdef URPI
     int error = 0;
+    printf("recieving error\n");
     boost::asio::read(*s, boost::asio::buffer(&error,sizeof(error)));
+    printf("error recieved\n");
     return error;
 #else 
     return 0;
