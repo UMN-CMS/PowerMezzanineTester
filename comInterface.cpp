@@ -173,6 +173,7 @@ int RPiInterface::i2c_read(int sa, char * buf, int sz)
 
     boost::asio::read(*s, boost::asio::buffer(buf,sz));
     errno_ = recieve_error();
+
     s->close();
     delete s;
     return errno_;
@@ -231,16 +232,11 @@ int RPiInterface::recieve_error()
 double RPiInterface::read_adc(int chan)
 {
 #ifdef URPI
-    char buff[9], pLoc[2];;
+    unsigned char buff[9], pLoc[2];
 
     int error = 0;
 
-    //Get initial mux setting
-    //error = i2c_read(RPI_MUX_SADDRESS, (char*)pLoc, 1);
-
     //Set adapter MUX
-    //buff[0] = 0x1; // mux channel 0 is where the on adapter i2c chips are located
-    //error |= i2c_write(RPI_MUX_SADDRESS, (char*)buff, 1);
     int tmp_adChan = adChan_;
     set_adChan(0);
 
@@ -252,12 +248,14 @@ double RPiInterface::read_adc(int chan)
     error |= i2c_read(RPI_ADC_SADDRESS, (char*)buff, 2);  //read result register (2 bytes for 12 bit vaule)
 
     //Write origional mux settings
-    //error |= i2c_write(RPI_MUX_SADDRESS, (char*)pLoc, 1);
     set_adChan(tmp_adChan);
 
     errno_ = error;
+    unsigned int twelvebit=(unsigned int)(buff[0]);
+    twelvebit=twelvebit<<4 | ((buff[1]&0xF0)>>4);
+    double voltage=twelvebit/1600.0;
 
-    return double((int(buff[0] << 8) | (int)(buff[1])) >> 4) / 1600.0;
+    return voltage;
 #else
     return -999.0;
 #endif

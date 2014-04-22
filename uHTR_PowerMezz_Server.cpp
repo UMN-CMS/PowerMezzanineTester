@@ -44,8 +44,7 @@ void session(socket_ptr sock, RPiInterfaceServer rpi )
         int length = header.at(2);
         int adChan = header.at(3);
 
-        printf("%x,%i,%i,%i",address,mode,length,adChan);
-        std::cout << "hmmm\n";
+        printf("header: %x,%i,%i,%i \n",address,mode,length,adChan);
         char buff = (char)(1 << adChan);
         int error = rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
 

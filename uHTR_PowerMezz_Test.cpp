@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
                 return 0;
 
             case 'q':
-                uHTRPowerMezzInterface s20(sub20Num, isV2);
+      uHTRPowerMezzInterface s20(sub20Num, isV2, true, "cms1pi","1338");
 
                 int chan = int(atoi(optarg));
                 int adc = 0;
@@ -453,7 +453,9 @@ void  INThandler(int sig)
 {
     signal(sig, SIG_IGN);
 
-    printf("Turning of power to Mezzanines\n");
+    printf("\n***************************************** \n");
+    printf("**** Turning off power to Mezzanines **** \n");
+    printf("***************************************** \n");
     Mezzanines * mezzanines = Mezzanines::Instance();
     mezzanines->setPrimaryLoad(false, false);
     mezzanines->setSecondaryLoad(false, false, false, false);
