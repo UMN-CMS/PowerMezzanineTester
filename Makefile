@@ -31,6 +31,8 @@ CXXFLAGS  = ${DEPENDFLAGS} -DURPI
 
 
 all:OUTPUT
+	
+server:uHTR_PowerMezz_Server.exe
 
 OUTPUT:uHTR_PowerMezz_Test.exe uHTR_PowerMezz_Server.exe #uHTR_PowerMezz_Test_V2.exe #uHTR_ClockMezz_Test.exe uHTR_CtrlMezz_Test.exe sub20tool.exe
 
