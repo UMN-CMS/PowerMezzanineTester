@@ -154,7 +154,10 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
                 error |= com->i2c_read(saddress, (char*)buff_, 3);  //12 or 16 bit ADC val are both 2 bytes long and the 3rd byte is status info
             } while(!error && (buff_[2] & I2C_MODADC_READMASK_RDY) && !usleep(1000));
 
-            retval = double(int((I2C_MODADC_READMASK_UPBYTE_12 & buff_[0]) << 8) | (int)buff_[1]);
+            unsigned int adcval = ((unsigned int)(buff_[0] & I2C_MODADC_READMASK_UPBYTE_12)) << 8;
+            adcval |= (unsigned int) buff_[1];
+
+            retval = adcval;
         }
         else if (adc == 2)
         {
@@ -167,8 +170,11 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
             error |= com->i2c_write(saddress, (char*)buff_, 1);  //set result register
             error |= com->i2c_read(saddress, (char*)buff_, 2);  //read result register (2 bytes for 12 bit vaule)
 
+            unsigned int adcval=((unsigned int)(buff_[0]))<<4;
+            adcval|=(((unsigned int)(buff_[1]))&0xF0)>>4;
+
             if(chan == 7) retval = ((buff_[1] & 1)?(double(512 - buff_[0]/2)):(double(buff_[0])/2)); //exception for temp reading
-            else          retval = double((int(buff_[0] << 8) | (int)(buff_[1])) >> 4);
+            else          retval = adcval;
         }
     }
     else
@@ -205,7 +211,9 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
             error |= com->i2c_read(saddress, (char*)buff_, 3);  //12 or 16 bit ADC val are both 2 bytes long and the 3rd byte is status info
         } while(!error && (buff_[2] & I2C_MODADC_READMASK_RDY) && !usleep(1000));
 
-        retval = double(int((I2C_MODADC_READMASK_UPBYTE_12 & buff_[0]) << 8) | (int)buff_[1]);
+        unsigned int adcval = ((unsigned int)(buff_[0] & I2C_MODADC_READMASK_UPBYTE_12)) << 8;
+        adcval |= (unsigned int) buff_[1];
+        retval = adcval;
     }
 
     errval_ = error;
