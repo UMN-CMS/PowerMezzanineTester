@@ -8,7 +8,7 @@ public:
     virtual void lcd_write(char *,int) = 0;
     virtual void set_adChan(int adChan) {}
 
-    virtual bool can_connect() {return true;}
+    virtual bool can_connect() {return false;}
 
     virtual bool isRPi() = 0;
     int getError()
@@ -69,14 +69,14 @@ public:
     void set_adChan(int adChan) { adChan_ = adChan; }
     bool isRPi() {return true;}
 
-    void open_socket();
-    //bool can_connect();
+    bool open_socket();
+    bool can_connect();
 
 
 private:
     void send_header(int address, Mode mode, int sz);
     int recieve_error();
-    boost::asio::io_service * io_service;
+    static boost::asio::io_service * io_service;
     boost::asio::ip::tcp::resolver::query * query;
     boost::asio::ip::tcp::resolver::iterator iterator;
     boost::asio::ip::tcp::socket * s;
