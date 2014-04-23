@@ -18,6 +18,7 @@
 #include "comInterfaceServer.h"
 
 #define V2_I2C_SADDRESS_RPI_MUX    0x77
+#define V2_I2C_SADDRESS_BASE_MUX    0x70
 
 using boost::asio::ip::tcp;
 
@@ -37,16 +38,22 @@ void session(socket_ptr sock, RPiInterfaceServer rpi )
     try
     {
         //read mode first
-        std::vector<int> header(4);
-        boost::asio::read(*sock, boost::asio::buffer(header,4*sizeof(int)));
+        std::vector<int> header(5);
+        boost::asio::read(*sock, boost::asio::buffer(header,5*sizeof(int)));
         int address = header.at(0);
         Mode mode = Mode(header.at(1));
         int length = header.at(2);
         int adChan = header.at(3);
+        int bbChan = header.at(4);
 
-        printf("header: %x,%i,%i,%i \n",address,mode,length,adChan);
+        printf("header: %x,%i,%i,%i,%i \n",address,mode,length,adChan,bbChan);
+        //Set RPI Mux 
         char buff = (char)(1 << adChan);
         int error = rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
+
+        //set board mux
+        buff = (char)(1 << bbChan);
+        error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
 
         //switch over mode
         char data[max_length];

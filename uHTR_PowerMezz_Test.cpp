@@ -245,6 +245,7 @@ int main(int argc, char* argv[])
                 printf(" 5V:          %8.2f mV\n", 3.7*s20.readSUB20ADC(6 - 2*(RPimuxChan - 1))*1000);
                 s20.setMUXChannel(chan, RPimuxChan);
                 printf("MUX STATUS: %x\n", s20.getError());
+		s20.configGPIO();
                 s20.togglePowerMezzs(true);
                 printf("TOG STATUS: %x\n", s20.getError());
                 if(adc == 2) s20.configADC128();

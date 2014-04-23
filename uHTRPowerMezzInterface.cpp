@@ -292,21 +292,11 @@ void uHTRPowerMezzInterface::readMarginPGood(bool* margup, bool* margdn, bool* p
 
 void uHTRPowerMezzInterface::configGPIO()
 {
-    // Set register for control
-    buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
-    com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
-    //com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
-
-    //joe thinks these are not needed
-    //buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C0;  //set C0 to output
-    //com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set register
-
     // Set register for output
     buff_[0] = I2C_MARGCTRL_CTRL_REG;  //register address byte
-    com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 1);  //set register
-    com->i2c_read(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)(buff_ + 1), 1);  //read register
 
     buff_[1] = (char) 0xff;
+    buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C0;  //set C0 to output
     buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C1;  //set C1 to output
     buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C2;  //set C2 to output
     buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C3;  //set C3 to output

@@ -249,12 +249,13 @@ bool RPiInterface::open_socket()
 void RPiInterface::send_header(int address, Mode mode, int length)
 {
 #ifdef URPI
-    std::vector<int> header(4);
+    std::vector<int> header(5);
     header[0]=address;
     header[1]=mode;
     header[2]=length;
     header[3]=adChan_;
-    boost::asio::write(*s, boost::asio::buffer(header, 4*sizeof(int)));
+    header[4]=bbChan_;
+    boost::asio::write(*s, boost::asio::buffer(header, 5*sizeof(int)));
 #endif
 }
         

@@ -7,6 +7,7 @@ public:
     virtual double read_adc(int chan) = 0;
     virtual void lcd_write(char *,int) = 0;
     virtual void set_adChan(int adChan) {}
+    virtual void set_bbChan(int bbChan) {}
 
     virtual bool can_connect() {return false;}
 
@@ -67,6 +68,7 @@ public:
     double read_adc(int chan);
     void lcd_write(char *,int sz); //RPi has no LCD display so write to std::cout
     void set_adChan(int adChan) { adChan_ = adChan; }
+    void set_bbChan(int bbChan) { bbChan_ = bbChan; }
     bool isRPi() {return true;}
 
     bool open_socket();
@@ -81,6 +83,7 @@ private:
     boost::asio::ip::tcp::resolver::iterator iterator;
     boost::asio::ip::tcp::socket * s;
     int adChan_;
+    int bbChan_;
 };
 
 
