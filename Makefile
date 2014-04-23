@@ -43,8 +43,8 @@ LIBSRCS_S :=  comInterfaceServer.cpp #uHTRClockMezzInterface.cpp
 LIBOBJS_T :=$(patsubst %.cpp,%.o,${LIBSRCS_T}) gnublin.o
 LIBOBJS_S :=$(patsubst %.cpp,%.o,${LIBSRCS_S}) gnublin.o
 
-LIBHEAD_T :=$(patsubst %.cpp,%.h,${LIBSRCS_T}) gnublin.o
-LIBHEAD_S :=$(patsubst %.cpp,%.h,${LIBSRCS_S}) gnublin.o
+LIBHEAD_T :=$(patsubst %.cpp,%.h,${LIBSRCS_T}) gnublin-api/gnublin.h
+LIBHEAD_S :=$(patsubst %.cpp,%.h,${LIBSRCS_S}) gnublin-api/gnublin.h
 
 #uHTR_PowerMezz_Test_V2.exe: uHTR_PowerMezz_Test_V2.o ${LIBOBJS}
 #	gcc -O2 -I. $^ -lboost_thread -lstdc++ -lm -o $@
@@ -77,7 +77,7 @@ uHTR_PowerMezz_Server.o : ${LIBHEAD_S}
 #uHTR_PowerMezz_Test_V2.o : ${LIBSRCS} uHTRMezzInterface.h uHTRPowerMezzInterface.h
 
 gnublin.o : gnublin-api/gnublin.cpp gnublin-api/gnublin.h
-	${CXX} ${CPPFLAGS} -c -o $@ gnublin-api/gnublin.cpp
+	${CXX} ${CPPFLAGS} ${CXXFLAGS} -c -o $@ gnublin-api/gnublin.cpp
 
 clean:	
 	rm -f uHTR_PowerMezz_Test.exe uHTR_ClockMezz_Test.exe uHTR_CtrlMezz_Test.exe uHTRClockMezzInterface.o uHTR_ClockMezz_Test.o uHTRMezzInterface.o uHTRPowerMezzInterface.o uHTR_PowerMezz_Test.o uHTRMezzanines.o uHTR_CtrlMezz_Test.o sub20tool.o comInterface.o

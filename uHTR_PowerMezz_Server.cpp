@@ -32,7 +32,7 @@ enum Mode {
 typedef tcp::socket*  socket_ptr;
 
 
-void session(socket_ptr sock, RPiInterfaceServer rpi )
+void session(socket_ptr sock, RPiInterfaceServer& rpi )
 {
     try
     {
@@ -54,20 +54,15 @@ void session(socket_ptr sock, RPiInterfaceServer rpi )
         switch (mode)
         {
             case WRITE:
-                printf("doing write\n");
                 boost::asio::read(*sock, boost::asio::buffer(data,length));
-                printf("data recieved\n");
                 error |= rpi.i2c_write(address,data,length);
 
                 break;
             case READ:
-                printf("doing read\n");
                 error |= rpi.i2c_read(address,data,length);
                 boost::asio::write(*sock, boost::asio::buffer(data,length));
-                printf("data sent\n");
                 break;
             case DISPLAY:
-                printf("doing display\n");
                 boost::asio::read(*sock, boost::asio::buffer(data,length));
                 rpi.lcd_write(data,length);
                 break;
@@ -76,7 +71,6 @@ void session(socket_ptr sock, RPiInterfaceServer rpi )
                 break;
         }
         boost::asio::write(*sock, boost::asio::buffer(&error,sizeof(error)));
-        printf("error sent\n");
     }
     catch (std::exception& e)
     {
@@ -92,7 +86,6 @@ void server(boost::asio::io_service& io_service, short port)
     {
         socket_ptr sock(new tcp::socket(io_service));
         a.accept(*sock);
-        printf("Socket accepted\n");
         session(sock,rpi);
         delete sock;
     }

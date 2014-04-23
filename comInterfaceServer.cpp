@@ -28,7 +28,7 @@ int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
     for(int i =0; i < sz; i++)
         printf("%02x ", buf[i]);
     printf("\n");
-    return i2c.fail();
+    return errno_;//i2c.fail();
 #else
     return 0;
 #endif
@@ -47,7 +47,7 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
         printf("%02x ", buf[i]);
     printf("\n");
 
-    return i2c.fail();
+    return errno_; //i2c.fail();
 #else
     return 0;
 #endif
@@ -60,7 +60,6 @@ void RPiInterfaceServer::configADC128()
     unsigned int error = 0;
 
     char buff[9];
-
     // ensure mux points to the right address
     buff[0] = 0x01;
     error |= i2c_write(RPI_MUX_SADDRESS, buff, 1);
@@ -99,6 +98,7 @@ void RPiInterfaceServer::configADC128()
     error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 2);
 
     usleep(100000);
+
 
     errno_ = error;
 #endif
