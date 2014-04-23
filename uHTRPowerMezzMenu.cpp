@@ -102,7 +102,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     if (has_colors())
     {
         start_color();
-        if(can_change_color())
+        /*if(can_change_color())
         {
             init_color(COLOR_RED, 500,0,0);
             init_color(COLOR_YELLOW, 926,675,54);
@@ -117,7 +117,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
             init_pair(2, COLOR_BLUE,     COLOR_BLACK );
             init_pair(3, COLOR_BLACK,    COLOR_GREEN );
             init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
-        }
+        }*/
     }
     cbreak(); 
     nodelay(stdscr, TRUE);
@@ -209,7 +209,6 @@ void uHTRPowerMezzMenu::display()
     char header2[256];
     char header3[256];
     char bars[256];
-    char buff[256];
                    // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
                    // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
     sprintf(header1, " Board |          Mezz 1        |         Mezz 2         |         Mezz 3         |         Mezz 4         |         Mezz 5         |");
@@ -228,6 +227,8 @@ void uHTRPowerMezzMenu::display()
 
     int x = xinit+1 , y = 4 + yinit;
 
+    char buff[256];
+
     for(std::map<int,Board>::iterator board = boards.begin();
             board != boards.end();
             board++)
@@ -235,6 +236,7 @@ void uHTRPowerMezzMenu::display()
         mvaddstr(y,x, bars);
 
         Board * b =  &board->second;
+        //printf("Board %d",b->id); 
         sprintf(buff,"   %2d",b->id);
         mvaddstr(y,x,buff);
         x+=8;
@@ -255,6 +257,8 @@ void uHTRPowerMezzMenu::display()
                 for(;iM != b->mezzanines->end(); iM++)
                 {
                     sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
+                    //printf("mezz out: %7.2f %7.2f %7.2f\n", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
+
                     mvaddstr(y,x,buff);
                     x+=25;
                 }
@@ -274,16 +278,16 @@ void uHTRPowerMezzMenu::display()
 
         if(fail) mvaddstr(y,x, response);
         y++;
-        x=1;
+        x=1+xinit;
 
+        //printf("\n"); 
     }
-    mvaddstr(LINES-3,2,"Which board1: ");
+    //move(LINES-3,2);
 }
 
 int uHTRPowerMezzMenu::start_test()
 {
 
-    mvaddstr(LINES-3,2,"Which board2: ");
     int key_code;
     if(( key_code = getch()) == ERR)
         return 0;

@@ -72,22 +72,26 @@ int uHTRMezzInterface::setMUXChannel(const int bbChan, const int adChan)
 
     if(isRPi_ && adChan >= 0)
     {
-	if (!com->can_connect())
-	{
-	    return 1;
-	}
-	com->set_adChan(adChan);
+        com->set_adChan(adChan);
     }
 
-    if(isV2_)
+    if(isRPi_)
     {
-        buff_[0] = (char)(1 << bbChan);
-        error |= com->i2c_write(V2_I2C_SADDRESS_BASE_MUX, (char*)buff_, 1);
+        com->set_bbChan(bbChan);
     }
     else
     {
-        buff_[0] = (char)(bbChan | 0x4);
-        error |= com->i2c_write(I2C_SADDRESS_BASEMUX, (char*)buff_, 1);
+
+        if(isV2_)
+        {
+            buff_[0] = (char)(1 << bbChan);
+            error |= com->i2c_write(V2_I2C_SADDRESS_BASE_MUX, (char*)buff_, 1);
+        }
+        else
+        {
+            buff_[0] = (char)(bbChan | 0x4);
+            error |= com->i2c_write(I2C_SADDRESS_BASEMUX, (char*)buff_, 1);
+        }
     }
 
     return error;

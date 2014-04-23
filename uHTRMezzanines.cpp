@@ -276,8 +276,10 @@ unsigned int PM::monitor(bool passive)
         // MCP3426A0; SLAVE ADDRESS: 1101 000
         // Channel 1: TEMP(degrees C) = 25 + (V_CH1 - 750) / 10
         // 2.048V reference -> 1 mV per LSB
+        
         if(isV2) p_temp = 25 + (s20.readMezzADC(V2_MEZZ_ADC, 1) - 750.0) / 10.0;
         else     p_temp = 25 + (s20.readMezzADC(ADC_26, 1) - 750.0) / 10.0;
+
         if(!passive) fprintf(f_detail, "%5.1f C, ", p_temp);
 
         //--------------------------------------------------------------------
@@ -396,13 +398,16 @@ unsigned int PM::monitor(bool passive)
     else
     {
         actTest->pass |= RETVAL_NO_MODLE_DETECTED;
-        if(isMaybeNotThere)
+        if(!passive)
         {
-            setRun(false);
-            setPrimaryLoad(false, false);
-            isNotThere = true;
+            if(isMaybeNotThere)
+            {
+                setRun(false);
+                setPrimaryLoad(false, false);
+                isNotThere = true;
+            }
+            isMaybeNotThere = true;
         }
-        isMaybeNotThere = true;
     }
 
     //--------------------------------------------------------------------
@@ -972,7 +977,7 @@ unsigned int Mezzanines::monitor(bool passive)
     for(iM = begin(); iM != end(); ++iM)
     {
         boost::mutex::scoped_lock l(*s20mtx_);
-        if(!(*iM)->isPresent()) continue;
+        if(!(*iM)->isPresent() && !passive) continue;
         status |= (*iM)->monitor(passive);
     }
     return status;
