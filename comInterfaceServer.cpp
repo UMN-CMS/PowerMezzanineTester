@@ -24,10 +24,10 @@ int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
 
     errno_ = i2c.fail();
 
-    printf("w: %02x: %d: ", sa,errno_);
-    for(int i =0; i < sz; i++)
-        printf("%02x ", buf[i]);
-    printf("\n");
+    //printf("w: %02x: %d: ", sa,errno_);
+    //for(int i =0; i < sz; i++)
+    //    printf("%02x ", buf[i]);
+    //printf("\n");
     return errno_;//i2c.fail();
 #else
     return 0;
@@ -42,10 +42,10 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
     
     errno_ = i2c.fail();
 
-    printf("r: %02x: %d: ", sa,errno_);
-    for(int i =0; i < sz; i++)
-        printf("%02x ", buf[i]);
-    printf("\n");
+    //printf("r: %02x: %d: ", sa,errno_);
+    //for(int i =0; i < sz; i++)
+    //    printf("%02x ", buf[i]);
+    //printf("\n");
 
     return errno_; //i2c.fail();
 #else
@@ -83,17 +83,17 @@ void RPiInterfaceServer::readTest(int adChan, int data[])
     std::map<int,time_t>::iterator it = times.find(adChan);
     if(it != times.end())
     {
-        data[0] = times[adChan];
-        data[1] = pids[adChan];
         time_t rawtime;
         time(&rawtime);
-        printf("Channel %d: Time %d, pid: %d", adChan, rawtime - data[0], data[1]);
+        data[0] = rawtime - times[adChan];
+        data[1] = pids[adChan];
     }
     else 
     {
-        data[0] = -1;
-        data[1] = -1;
+        data[0] = 0;
+        data[1] = 0;
     }
+    printf("Channel %d: Time %d, pid: %d", adChan, data[0], data[1]);
 }
 
 
