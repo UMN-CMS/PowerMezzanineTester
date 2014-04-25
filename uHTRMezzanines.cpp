@@ -590,14 +590,17 @@ unsigned int APM::monitor(bool passive)
     {
         actTest->pass |= RETVAL_NO_MODLE_DETECTED;
 
-        if(isMaybeNotThere)
+        if(!passive)
         {
-            setRun(false);
-            setPrimaryLoad(false, false);
-            setSecondaryLoad(false, false, false, false);
-            isNotThere = true;
+            if(isMaybeNotThere)
+            {
+                setRun(false);
+                setPrimaryLoad(false, false);
+                setSecondaryLoad(false, false, false, false);
+                isNotThere = true;
+            }
+            isMaybeNotThere = true;
         }
-        isMaybeNotThere = true;
     }
 
     //--------------------------------------------------------------------

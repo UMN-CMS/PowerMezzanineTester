@@ -89,6 +89,11 @@ void RPiInterfaceServer::readTest(int adChan, int data[])
         time(&rawtime);
         printf("Channel %d: Time %d, pid: %d", adChan, rawtime - data[0], data[1]);
     }
+    else 
+    {
+        data[0] = -1;
+        data[1] = -1;
+    }
 }
 
 
