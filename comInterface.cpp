@@ -142,6 +142,8 @@ RPiInterface::RPiInterface(std::string host, std::string port)
     {
         io_service = new boost::asio::io_service();
     }
+    adChan_ = -1;
+    bbChan_ = -1;
 
     tcp::resolver resolver(*io_service);
     query = new tcp::resolver::query(tcp::v4(), host, port);

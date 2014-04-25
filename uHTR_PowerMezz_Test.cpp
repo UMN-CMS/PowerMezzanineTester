@@ -503,6 +503,7 @@ int main(int argc, char* argv[])
 
     if(runTest)
     {
+        s20.startTest(getpid());
         int retval = test_mezzanines(s20, mezzanines);
         char retmessage[32];
         Mezzanine::Summary::translateStatus(retval, retmessage);
@@ -530,10 +531,22 @@ void  INThandler(int sig)
 }
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
+    active_s20 = &s20;
     int i, status;
     io::printf("Starting Mezzanine Tests...\n");
     if (mezzanines->empty()) return RETVAL_NO_MEZZ_SPEC;
-    signal(SIGINT, INThandler);
+
+    //Handle Signal
+    struct sigaction sa;
+
+    sa.sa_handler = INThandler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART; /* Restart functions if
+                                 interrupted by handler */
+    if (sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        io::printf("handle this error?\n");
+    }
 
     int adChan = mezzanines->front()->get_adChan();
 

@@ -75,6 +75,11 @@ void RPiInterfaceServer::readTest(int adChan, int data[])
         data[0] = times[adChan];
         data[1] = pids[adChan];
     }
+    else 
+    {
+        data[0] = -1;
+        data[1] = -1;
+    }
 }
 
 

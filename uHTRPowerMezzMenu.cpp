@@ -13,6 +13,13 @@ extern std::string parseto(std::string &buff, std::string del = ",")
 
 uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses)
 {
+    //Handle signals
+    
+    struct sigaction sa;
+
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART; /* Restart functions if
+                                 interrupted by handler */
     ncurses_ = ncurses;
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
@@ -325,8 +332,6 @@ int uHTRPowerMezzMenu::start_test()
         {
             pid_t pid = fork();
             if(pid == 0) return board;
-            
-            boards[board].s20->startTest(pid);
         }
         else if(key_code == 'q') return -1;
         return 0;
