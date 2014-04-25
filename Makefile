@@ -34,7 +34,7 @@ all:OUTPUT
 
 OUTPUT:uHTR_PowerMezz_Test.exe uHTR_PowerMezz_Server.exe #uHTR_PowerMezz_Test_V2.exe #uHTR_ClockMezz_Test.exe uHTR_CtrlMezz_Test.exe sub20tool.exe
 
-LIBSRCS_T := uHTRMezzInterface.cpp uHTRPowerMezzInterface.cpp uHTRMezzanines.cpp comInterface.cpp uHTRPowerMezzMenu.cpp #uHTRClockMezzInterface.cpp 
+LIBSRCS_T := uHTRMezzInterface.cpp uHTRPowerMezzInterface.cpp uHTRMezzanines.cpp comInterface.cpp uHTRPowerMezzMenu.cpp io.cpp #uHTRClockMezzInterface.cpp 
 
 LIBSRCS_S :=  comInterfaceServer.cpp #uHTRClockMezzInterface.cpp 
 

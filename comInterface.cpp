@@ -1,4 +1,5 @@
 #include "comInterface.h"
+#include "io.h"
 
 S20Interface::S20Interface(int ns20)
 {
@@ -19,8 +20,8 @@ S20Interface::S20Interface(int ns20)
     //verify the device is open                                                                                                                              
     if(sh_ == 0) 
     {
-	printf("DEVICE FAILED TO OPEN\n");
-	openSuccessful_ = false;
+        io::printf("DEVICE FAILED TO OPEN\n");
+        openSuccessful_ = false;
     }
     else
     {
@@ -139,7 +140,6 @@ RPiInterface::RPiInterface(std::string host, std::string port)
 #ifdef URPI
     if(io_service == NULL)
     {
-	std::cout << "Initializing boost asio\n";
         io_service = new boost::asio::io_service();
     }
 
@@ -230,15 +230,10 @@ bool RPiInterface::open_socket()
 
     s->connect(*iterator,error);
 
-    //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-    //std::cout << "error is : " << error.message() << std::endl;
-
     while (error && iterator != end)
     {
         s->close();
         s->connect(*iterator++, error);
-        //std::cout << "IP is : " << iterator->endpoint().address() << std::endl;
-        //std::cout << "error is : " << error << std::endl;
     }
 
     return !error;
@@ -282,7 +277,7 @@ double RPiInterface::read_adc(int chan)
     set_adChan(0);
 
     //Read ADC value
-    if(chan >= 8) printf("INVALID ADC CHANNEL (ADC128, adapter)\n");
+    if(chan >= 8) io::printf("INVALID ADC CHANNEL (ADC128, adapter)\n");
     // 0x20 is start of output registers 
     buff[0] = 0x20 + chan;
     error |= i2c_write(RPI_ADC_SADDRESS, (char*)buff, 1);  //set result register
@@ -302,3 +297,45 @@ double RPiInterface::read_adc(int chan)
 #endif
 }
 
+void RPiInterface::startTest(int pid)
+{
+#ifdef URPI
+    if(!open_socket()) return;
+    send_header(pid,START,0);
+
+    errno_ = recieve_error();
+
+    s->close();
+    delete s;
+#endif
+}
+
+void RPiInterface::endTest()
+{
+#ifdef URPI
+    if(!open_socket()) return;
+    send_header(0,STOP,0);
+
+    errno_ = recieve_error();
+
+    s->close();
+    delete s;
+#endif
+}
+
+int RPiInterface::readTime(int& pid)
+{
+#ifdef URPI
+    if(!open_socket()) return 0;
+    send_header(0,TIME,2);
+
+    int ret[2];
+    boost::asio::read(*s, boost::asio::buffer(ret,2));
+    errno_ = recieve_error();
+
+    s->close();
+    delete s;
+    pid = ret[1];
+    return ret[0];
+#endif
+}

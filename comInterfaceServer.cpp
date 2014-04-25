@@ -53,6 +53,26 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
 #endif
 }
 
+void RPiInterfaceServer::startTest(int pid, int adChan)
+{
+    pids[adChan] = pid;
+    time_t rawtime;
+    time(&rawtime);
+    times[adChan] = rawtime;
+}
+
+void RPiInterfaceServer::stopTest(int adChan)
+{
+    pids.erase(adChan);
+    times.erase(adChan);
+}
+
+void RPiInterfaceServer::readTime(int adChan, int data[])
+{
+    data[0] = times[adChan];
+    data[1] = pids[adChan];
+}
+
 
 void RPiInterfaceServer::configADC128()
 {

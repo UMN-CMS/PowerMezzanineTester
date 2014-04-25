@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include "io.h"
 
 #include "uHTRPowerMezzInterface.h"
 #include "uHTRPowerMezzMenu.h"
@@ -32,7 +33,7 @@ double APM_VOUT_NOM = 1.8;
 const double APM_VC_NOM = 12.0;
 
 Mezzanines * active_mezzanines = NULL;
-int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool quiet = false);
+int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines);
 void help();
 
 unsigned int in_[] = {0x6e6f420c, 0x72756f6a, 0x20202021, 0x00202020, 0x6d614d0c, 0x64206e61, 0x6e655265, 0x00202065,
@@ -112,7 +113,6 @@ int main(int argc, char* argv[])
     bool interactive = false;
     char site[16], tester[16], echoString[32], cFileName[128] = "configuration.txt";
     unsigned int sbSize = 0, sub20Num = 0, boardID = 0;
-    bool quiet = false;
 
     if(argc == 1)
     {
@@ -315,7 +315,6 @@ int main(int argc, char* argv[])
         if(tmp.size() < 10) continue;
         unsigned int id = atoi(parse_to(tmp).c_str());
         config_lines[id] = tmp;
-        std::cout << "Loaded Board " << id << std::endl;
     }
 
     //Do interactive
@@ -323,19 +322,34 @@ int main(int argc, char* argv[])
 
     if(interactive)
     {
-        uHTRPowerMezzMenu menu(config_lines,isV2);
+        uHTRPowerMezzMenu menu(config_lines,isV2,true);
         for(;;)
         {
             menu.display();
             boardID = menu.start_test();
             if(boardID == 0) 
             {
-                sleep(1);
+                usleep(100000);
                 continue;
             }
             else if(boardID == -1) menu.quit();
+
+            printf("boardID == %d", boardID);
             runTest = true;
-            quiet = true;
+
+            time_t rawtime;
+            struct tm * timeinfo;
+            char buffer [80];
+
+            time (&rawtime);
+            timeinfo = localtime (&rawtime);
+
+            strftime (buffer,80,"%F-%R",timeinfo);
+
+            char logname[64];
+            sprintf(logname, "log.%02d.%s.txt", boardID,buffer);
+            FILE * log = fopen(logname, "w");
+            io::Instance()->out = log;
             break;
         }
     }
@@ -349,7 +363,7 @@ int main(int argc, char* argv[])
     }
     else 
     {
-        std::cout << "BoardID not found. Specify with -I# (or add board to config file)\n";
+        printf("BoardID not found. Specify with -I# (or add board to config file)\n");
         return 0;
     }
 
@@ -357,14 +371,11 @@ int main(int argc, char* argv[])
     sprintf(adapter, "%s", parse_to(config_line).c_str());
     sprintf(hostname,    "%s", parse_to(config_line,":").c_str());
     sprintf(port,    "%s", parse_to(config_line).c_str());
-    if(!quiet)
-    {
-        std::cout << "boardID: " << boardID << std::endl;
-        std::cout << "adChan: " << adChan << std::endl;
-        std::cout << "adapter: " << adapter << std::endl;
-        std::cout << "hostname: " << hostname << std::endl;
-        std::cout << "port: " << port << std::endl;
-    }
+    io::printf("boardID:  %d\n" , boardID);
+    io::printf("adChan:   %d\n" , adChan);
+    io::printf("adapter:  %s\n" , adapter);
+    io::printf("hostname: %s\n" , hostname);
+    io::printf("port:     %s\n" , port);
 
     // Initialize i2c device
     bool isRPi = false;
@@ -372,8 +383,7 @@ int main(int argc, char* argv[])
     else if(strcmp(adapter, "S20") == 0) isRPi = false;
     else 
     {
-        if(!quiet)
-            printf("i2c adapter: %s is invalid!!! (Options are \"RPi\" and \"S20\")\n", adapter);
+        io::printf("i2c adapter: %s is invalid!!! (Options are \"RPi\" and \"S20\")\n", adapter);
         return 0;
     }
     uHTRPowerMezzInterface s20(sub20Num, isV2, isRPi,hostname,port);
@@ -389,8 +399,7 @@ int main(int argc, char* argv[])
         {
             if(isRPi && (adChan < 1 || adChan > 6)) 
             {
-                if(!quiet)
-                    printf("Invalid RPi adapter channel (1 - 6 are valid)!!!\n");
+                io::printf("Invalid RPi adapter channel (1 - 6 are valid)!!!\n");
                 return 0;
             }
             else if(!isRPi)
@@ -425,14 +434,12 @@ int main(int argc, char* argv[])
             }
             else
             {
-                if(!quiet)
-                    printf("Invalid or duplicate Mezzanine slot: %s (options are PM_3_3, APM_2_5, PM_1_B, APM_1_6, PM_1_A)!!!\n", slot);
+                io::printf("Invalid or duplicate Mezzanine slot: %s (options are PM_3_3, APM_2_5, PM_1_B, APM_1_6, PM_1_A)!!!\n", slot);
             }
         }
     }
     fclose(cfile);
 
-    std::cout << "loaded " << mezzanines->size() << " mezzanines\n";
     mezzanines->init();
 
     if(echo)
@@ -476,7 +483,7 @@ int main(int argc, char* argv[])
     {
         if(!siteSet && !testerSet)
         {
-            printf("Site name and tester name must both be specified to program eeprom (-h for options)\n");
+            io::printf("Site name and tester name must both be specified to program eeprom (-h for options)\n");
             return 0;
         }
     }
@@ -487,11 +494,10 @@ int main(int argc, char* argv[])
 
     if(runTest)
     {
-        int retval = test_mezzanines(s20, mezzanines,quiet);
+        int retval = test_mezzanines(s20, mezzanines);
         char retmessage[32];
         Mezzanine::Summary::translateStatus(retval, retmessage);
-        if(!quiet)
-            if(retval) printf("\nExit with value: %s\n", retmessage);
+        if(retval) io::printf("\nExit with value: %s\n", retmessage);
     }
 }
 
@@ -503,18 +509,18 @@ void  INThandler(int sig)
 {
     signal(sig, SIG_IGN);
 
-    printf("\n***************************************** \n");
-    printf("**** Turning off power to Mezzanines **** \n");
-    printf("***************************************** \n");
+    io::printf("\n***************************************** \n");
+    io::printf("**** Turning off power to Mezzanines **** \n");
+    io::printf("***************************************** \n");
     active_mezzanines->setPrimaryLoad(false, false);
     active_mezzanines->setSecondaryLoad(false, false, false, false);
     active_mezzanines->setRun(false);
     exit(0);
 }
-int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool quiet)
+int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
     int i, status;
-    if(!quiet) printf("Starting Mezzanine Tests...\n");
+    io::printf("Starting Mezzanine Tests...\n");
     if (mezzanines->empty()) return RETVAL_NO_MEZZ_SPEC;
     signal(SIGINT, INThandler);
 
@@ -595,12 +601,12 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
 
     // Monitor for N loops at 10 seconds per loop.
 
-    if(!quiet) printf("Margin Down Test:");
+    io::printf("Margin Down Test:");
     for (i = 0; i < N_margdn; i++)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        if(!quiet) printf(".");
+        io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
 
@@ -609,7 +615,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
     }
-    if(!quiet) printf("\n");
+    io::printf("\n");
     mezzanines->print();
 
     //====================================================================
@@ -620,12 +626,12 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
 
     // Monitor for N loops at 10 seconds per loop.
 
-    if(!quiet) printf("Margin Up Test:");
+    io::printf("Margin Up Test:");
     for (i = 0; i < N_margup; i++)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        if(!quiet) printf(".");
+        io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
 
@@ -634,7 +640,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
     }
-    if(!quiet) printf("\n");
+    io::printf("\n");
     mezzanines->print();
 
     //====================================================================
@@ -644,12 +650,12 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
     mezzanines->setMargins(0);
 
     // Monitor for N loops at 10 seconds per loop.
-    if(!quiet) printf("Nominal Test:");
+    io::printf("Nominal Test:");
     for (i = 0; i < N_nom; i++)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        if(!quiet) printf(".");
+        io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
 
@@ -658,7 +664,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
     }
-    if(!quiet) printf("\n");
+    io::printf("\n");
     mezzanines->print();
 
     //====================================================================
@@ -673,12 +679,12 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
     usleep(100000); //give time for voltage to settle
 
     // Monitor for N loops at 10 seconds per loop.
-    if(!quiet) printf("High Load Test:");
+    io::printf("High Load Test:");
     for (i = 0; i < N_nom_lh; i++)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        if(!quiet) printf(".");
+        io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
 
@@ -687,7 +693,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines, bool q
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
     }
-    if(!quiet) printf("\n");
+    io::printf("\n");
     mezzanines->print();
 
     // End of test cleanup

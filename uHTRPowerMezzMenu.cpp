@@ -11,8 +11,10 @@ extern std::string parseto(std::string &buff, std::string del = ",")
     return ret;
 }
 
-uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2)
+uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses)
 {
+    loops_ = 100;
+    ncurses_ = ncurses;
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
             it++)
@@ -20,18 +22,11 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
         Board b;
         b.id = it->first;
         std::string config_line = it->second;
-        //std::cout << config_line << std::endl;
 
         b.adChan = atoi(parseto(config_line).c_str());
         sprintf(b.adapter,  "%s", parseto(config_line).c_str());
         sprintf(b.hostname, "%s", parseto(config_line,":").c_str());
         sprintf(b.port,     "%s", parseto(config_line).c_str());
-
-        //std::cout << "boardID: " << b.id << std::endl;
-        //std::cout << "adChan: " << b.adChan << std::endl;
-        //std::cout << "adapter: " << b.adapter << std::endl;
-        //std::cout << "hostname: " << b.hostname << std::endl;
-        //std::cout << "port: " << b.port << std::endl;
 
         // Initialize i2c device
         bool isRPi = false;
@@ -99,30 +94,33 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     
     }
     initscr();
-    if (has_colors())
+    if(ncurses_)
     {
-        start_color();
-        /*if(can_change_color())
+        if (has_colors())
         {
-            init_color(COLOR_RED, 500,0,0);
-            init_color(COLOR_YELLOW, 926,675,54);
-            init_pair(1, COLOR_RED,    COLOR_BLACK );
-            init_pair(2, COLOR_YELLOW, COLOR_BLACK );
-            init_pair(3, COLOR_BLACK,  COLOR_RED   );
-            init_pair(4, COLOR_BLACK,  COLOR_YELLOW);
+            start_color();
+            /*if(can_change_color())
+              {
+              init_color(COLOR_RED, 500,0,0);
+              init_color(COLOR_YELLOW, 926,675,54);
+              init_pair(1, COLOR_RED,    COLOR_BLACK );
+              init_pair(2, COLOR_YELLOW, COLOR_BLACK );
+              init_pair(3, COLOR_BLACK,  COLOR_RED   );
+              init_pair(4, COLOR_BLACK,  COLOR_YELLOW);
+              }
+              else
+              {
+              init_pair(1, COLOR_GREEN,    COLOR_BLACK );
+              init_pair(2, COLOR_BLUE,     COLOR_BLACK );
+              init_pair(3, COLOR_BLACK,    COLOR_GREEN );
+              init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
+              }*/
         }
-        else
-        {
-            init_pair(1, COLOR_GREEN,    COLOR_BLACK );
-            init_pair(2, COLOR_BLUE,     COLOR_BLACK );
-            init_pair(3, COLOR_BLACK,    COLOR_GREEN );
-            init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
-        }*/
+        erase();
+        echo();
+        nodelay(stdscr, TRUE);
     }
     cbreak(); 
-    nodelay(stdscr, TRUE);
-    noecho();
-    erase();
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
@@ -183,62 +181,73 @@ int uHTRPowerMezzMenu::check_voltages(int id)
 
 void uHTRPowerMezzMenu::display()
 {
-    attrset(A_REVERSE);
-
-    for(int i = 1; i < COLS-1; i++)
+    loops_++;
+    if(loops_ < 100) 
     {
-        mvaddch(0,i,'-');
-        mvaddch(LINES-1,i,'-');
+        return;
     }
-
-    for(int i = 1; i < LINES-1; i++)
-    {
-        mvaddch(i,0,'|');
-        mvaddch(i,COLS-1,'|');
-    }
-    mvaddch(0,0,'+');
-    mvaddch(0,COLS-1,'+');
-    mvaddch(LINES-1,0,'+');
-    mvaddch(LINES-1,COLS-1,'+');
-    refresh();
-
-    attrset(A_NORMAL);
-
+    loops_ = 0;
 
     char header1[256];
     char header2[256];
     char header3[256];
     char bars[256];
-                   // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
-                   // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
-    sprintf(header1, " Board |          Mezz 1        |         Mezz 2         |         Mezz 3         |         Mezz 4         |         Mezz 5         |");
-    sprintf(header2, "       |Temp(C) Volt(V) Power(W)|   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |");
-    sprintf(header3, "-------|------------------------|------------------------|------------------------|------------------------|------------------------|");
-    sprintf(bars,    "       |                        |                        |                        |                        |                        |");
-                   //"   88  |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |");
-                  //         |1234567 1234567 1234567 | 
-                  //         7         -25-           32                       57                       82                       107                      132 
-
     int yinit = 5;
     int xinit = 5;
-    mvaddstr(yinit+1,xinit+1,header1);
-    mvaddstr(yinit+2,xinit+1,header2);
-    mvaddstr(yinit+3,xinit+1,header3);
-
     int x = xinit+1 , y = 4 + yinit;
+    if (ncurses_)
+    {
+        attrset(A_REVERSE);
 
+        for(int i = 1; i < COLS-1; i++)
+        {
+            mvaddch(0,i,'-');
+            mvaddch(LINES-1,i,'-');
+        }
+
+        for(int i = 1; i < LINES-1; i++)
+        {
+            mvaddch(i,0,'|');
+            mvaddch(i,COLS-1,'|');
+        }
+        mvaddch(0,0,'+');
+        mvaddch(0,COLS-1,'+');
+        mvaddch(LINES-1,0,'+');
+        mvaddch(LINES-1,COLS-1,'+');
+        refresh();
+
+        attrset(A_NORMAL);
+
+
+        // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
+        // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
+        sprintf(header1, " Board |          Mezz 1        |         Mezz 2         |         Mezz 3         |         Mezz 4         |         Mezz 5         |");
+        sprintf(header2, "       |Temp(C) Volt(V) Power(W)|   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |");
+        sprintf(header3, "-------|------------------------|------------------------|------------------------|------------------------|------------------------|");
+        sprintf(bars,    "       |                        |                        |                        |                        |                        |");
+        //"   88  |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |");
+        //         |1234567 1234567 1234567 | 
+        //         7         -25-           32                       57                       82                       107                      132 
+
+        mvaddstr(yinit+1,xinit+1,header1);
+        mvaddstr(yinit+2,xinit+1,header2);
+        mvaddstr(yinit+3,xinit+1,header3);
+
+
+    }
     char buff[256];
 
     for(std::map<int,Board>::iterator board = boards.begin();
             board != boards.end();
             board++)
     {
-        mvaddstr(y,x, bars);
+        if(ncurses_) mvaddstr(y,x, bars);
 
         Board * b =  &board->second;
         //printf("Board %d",b->id); 
         sprintf(buff,"   %2d",b->id);
-        mvaddstr(y,x,buff);
+        if(ncurses_) mvaddstr(y,x,buff);
+        else printw(buff);
         x+=8;
 
         //check connection
@@ -257,12 +266,11 @@ void uHTRPowerMezzMenu::display()
                 for(;iM != b->mezzanines->end(); iM++)
                 {
                     sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
-                    //printf("mezz out: %7.2f %7.2f %7.2f\n", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
 
-                    mvaddstr(y,x,buff);
+                    if(ncurses_) mvaddstr(y,x,buff);
+                    else printw(buff);
                     x+=25;
                 }
-                sleep(1);
             }
             else
             {
@@ -276,13 +284,15 @@ void uHTRPowerMezzMenu::display()
             fail = true;
         }
 
-        if(fail) mvaddstr(y,x, response);
+        if(fail && ncurses_) mvaddstr(y,x, response);
+        if(fail &&!ncurses_) printw(response);
+        if(!ncurses_) printw("\n");
         y++;
         x=1+xinit;
 
-        //printf("\n"); 
     }
-    //move(LINES-3,2);
+    if(ncurses_) mvaddstr(LINES-3,2,"Command1: ");
+    else printw("Command2: ");
 }
 
 int uHTRPowerMezzMenu::start_test()
@@ -290,15 +300,23 @@ int uHTRPowerMezzMenu::start_test()
 
     int key_code;
     if(( key_code = getch()) == ERR)
+    {
+        mvaddstr(LINES-3,15,"No input");
         return 0;
+    }
     else
     {
-        int board = key_code - '1';
+        int board = key_code - '0';
+        char buff[16];
+        sprintf(buff, "Board %c", key_code);
+        mvaddstr(LINES-4,15,buff);
         std::map<int, Board>::iterator b = boards.find(board);
         if(b != boards.end())
         {
             pid_t pid = fork();
             if(pid == 0) return board;
+            
+            boards[board].s20->startTest(pid);
         }
         else if(key_code == 'q') return -1;
         return 0;
