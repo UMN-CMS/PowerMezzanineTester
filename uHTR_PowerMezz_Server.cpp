@@ -89,7 +89,7 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
                 break;
             case TIME:
                 rpi.readTest(adChan,ret);
-                boost::asio::write(*sock, boost::asio::buffer(ret,length));
+                boost::asio::write(*sock, boost::asio::buffer(ret,2*sizeof(int)));
                 break;
             default:
                 std::cerr << "invalid mode\n";
