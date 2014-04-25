@@ -33,6 +33,8 @@ double APM_VOUT_NOM = 1.8;
 const double APM_VC_NOM = 12.0;
 
 Mezzanines * active_mezzanines = NULL;
+uHTRPowerMezzInterface * active_s20 = NULL;
+
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines);
 void help();
 
@@ -323,9 +325,15 @@ int main(int argc, char* argv[])
     if(interactive)
     {
         uHTRPowerMezzMenu menu(config_lines,isV2,true);
-        for(;;)
+        for(int loops = 0;true;loops++)
         {
-            menu.display();
+            if( loops % 100 ) 
+            {
+                menu.query_servers();
+                menu.display();
+                loops = 0;
+            }
+
             boardID = menu.start_test();
             if(boardID == 0) 
             {
@@ -388,6 +396,7 @@ int main(int argc, char* argv[])
     }
     uHTRPowerMezzInterface s20(sub20Num, isV2, isRPi,hostname,port);
     s20.init();
+
 
     // Grab mezzanines 
     char slot[32];
@@ -515,6 +524,8 @@ void  INThandler(int sig)
     active_mezzanines->setPrimaryLoad(false, false);
     active_mezzanines->setSecondaryLoad(false, false, false, false);
     active_mezzanines->setRun(false);
+
+    active_s20->stopTest();
     exit(0);
 }
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)

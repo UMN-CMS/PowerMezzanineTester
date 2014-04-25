@@ -33,7 +33,7 @@ public:
     void lcd_write(char *, int sz);
     void startTest(int pid, int adChan);
     void stopTest(int adChan);
-    void readTime(int adChan, int data[]);
+    void readTest(int adChan, int data[]);
 
 private:
     void configADC128();

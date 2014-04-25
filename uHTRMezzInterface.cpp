@@ -157,3 +157,13 @@ void uHTRMezzInterface::startTest(int pid)
 {
     com->startTest(pid);
 }
+
+void uHTRMezzInterface::stopTest()
+{
+    com->stopTest();
+}
+
+void uHTRMezzInterface::readTest(int test[])
+{
+    com->readTest(test);
+}

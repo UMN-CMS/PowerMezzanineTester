@@ -67,10 +67,14 @@ void RPiInterfaceServer::stopTest(int adChan)
     times.erase(adChan);
 }
 
-void RPiInterfaceServer::readTime(int adChan, int data[])
+void RPiInterfaceServer::readTest(int adChan, int data[])
 {
-    data[0] = times[adChan];
-    data[1] = pids[adChan];
+    std::map<int,time_t>::iterator it = times.find(adChan);
+    if(it != times.end())
+    {
+        data[0] = times[adChan];
+        data[1] = pids[adChan];
+    }
 }
 
 

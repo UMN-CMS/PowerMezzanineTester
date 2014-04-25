@@ -310,7 +310,7 @@ void RPiInterface::startTest(int pid)
 #endif
 }
 
-void RPiInterface::endTest()
+void RPiInterface::stopTest()
 {
 #ifdef URPI
     if(!open_socket()) return;
@@ -323,19 +323,16 @@ void RPiInterface::endTest()
 #endif
 }
 
-int RPiInterface::readTime(int& pid)
+void RPiInterface::readTest(int test[])
 {
 #ifdef URPI
-    if(!open_socket()) return 0;
+    if(!open_socket()) return;
     send_header(0,TIME,2);
 
-    int ret[2];
-    boost::asio::read(*s, boost::asio::buffer(ret,2));
+    boost::asio::read(*s, boost::asio::buffer(test,2));
     errno_ = recieve_error();
 
     s->close();
     delete s;
-    pid = ret[1];
-    return ret[0];
 #endif
 }

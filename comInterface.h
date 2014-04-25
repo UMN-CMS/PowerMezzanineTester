@@ -11,6 +11,8 @@ public:
 
     virtual bool can_connect() {return false;}
     virtual void startTest(int pid) {}
+    virtual void stopTest() {};
+    virtual void readTest(int test[]) {};
 
     virtual bool isRPi() = 0;
     int getError()
@@ -78,8 +80,8 @@ public:
     bool open_socket();
     bool can_connect();
     void startTest(int pid);
-    void endTest();
-    int readTime(int& pid);
+    void stopTest();
+    void readTest(int test[]);
 
 private:
     void send_header(int address, Mode mode, int sz);
