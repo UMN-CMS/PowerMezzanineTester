@@ -12,6 +12,7 @@ extern std::string parseto(std::string &buff, std::string del = ",")
 }
 
 uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses)
+    : yinit_(0),xinit_(0)
 {
     //Handle signals
     
@@ -20,7 +21,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART; /* Restart functions if
                                  interrupted by handler */
-    ncurses_ = ncurses;
+    mmode_ = NORMAL;
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
             it++)
@@ -43,6 +44,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
             printf("i2c adapter: %s is invalid!!! (Options are \"RPi\" and \"S20\")\n", b.adapter);
         }
         b.s20 = new uHTRPowerMezzInterface(0, isV2, isRPi,b.hostname,b.port);
+        b.s20->setMUXChannel(0,b.adChan);
 
         if(isRPi && (b.adChan < 1 || b.adChan > 6)) 
         {
@@ -96,42 +98,42 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
                 }
             }
         }
-        boards[b.id] = b;
+        boards_[b.id] = b;
     
     }
+    selected_board_ = boards_.begin();
     initscr();
-    if(ncurses_)
+    if (has_colors())
     {
-        if (has_colors())
-        {
-            start_color();
-            /*if(can_change_color())
-              {
-              init_color(COLOR_RED, 500,0,0);
-              init_color(COLOR_YELLOW, 926,675,54);
-              init_pair(1, COLOR_RED,    COLOR_BLACK );
-              init_pair(2, COLOR_YELLOW, COLOR_BLACK );
-              init_pair(3, COLOR_BLACK,  COLOR_RED   );
-              init_pair(4, COLOR_BLACK,  COLOR_YELLOW);
-              }
-              else
-              {
-              init_pair(1, COLOR_GREEN,    COLOR_BLACK );
-              init_pair(2, COLOR_BLUE,     COLOR_BLACK );
-              init_pair(3, COLOR_BLACK,    COLOR_GREEN );
-              init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
-              }*/
-        }
-        erase();
-        echo();
-        nodelay(stdscr, TRUE);
+        start_color();
+        /*if(can_change_color())
+          {
+          init_color(COLOR_RED, 500,0,0);
+          init_color(COLOR_YELLOW, 926,675,54);
+          init_pair(1, COLOR_RED,    COLOR_BLACK );
+          init_pair(2, COLOR_YELLOW, COLOR_BLACK );
+          init_pair(3, COLOR_BLACK,  COLOR_RED   );
+          init_pair(4, COLOR_BLACK,  COLOR_YELLOW);
+          }
+          else
+          {
+          init_pair(1, COLOR_GREEN,    COLOR_BLACK );
+          init_pair(2, COLOR_BLUE,     COLOR_BLACK );
+          init_pair(3, COLOR_BLACK,    COLOR_GREEN );
+          init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
+          }*/
     }
+    erase();
+    noecho();
+    nodelay(stdscr, TRUE);
+    keypad(stdscr,true);
     cbreak(); 
+    curs_set(0);
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
 {
-    uHTRPowerMezzInterface * s20 = boards[id].s20;
+    uHTRPowerMezzInterface * s20 = boards_[id].s20;
 
     if(s20->isV2_)
     {
@@ -141,10 +143,10 @@ int uHTRPowerMezzMenu::check_voltages(int id)
         {
             // 12 V supply is read through a divide by 9.2
             //
-            if(9.2 * s20->readSUB20ADC(7 - 2*(boards[id].adChan - 1)) < 10.0) return RETVAL_BAD_SUPPLY_VOLTAGE;
+            if(9.2 * s20->readSUB20ADC(7 - 2*(boards_[id].adChan - 1)) < 10.0) return RETVAL_BAD_SUPPLY_VOLTAGE;
 
             // 5 V supply is read through a dividr by 3.7
-            if(3.7 * s20->readSUB20ADC(6 - 2*(boards[id].adChan - 1)) < 4.5) return RETVAL_BAD_3_3VOLT;
+            if(3.7 * s20->readSUB20ADC(6 - 2*(boards_[id].adChan - 1)) < 4.5) return RETVAL_BAD_3_3VOLT;
 
         }
         else
@@ -185,6 +187,20 @@ int uHTRPowerMezzMenu::check_voltages(int id)
     return RETVAL_SUCCESS;
 }
 
+void uHTRPowerMezzMenu::draw_star()
+{
+    int y = 4 + yinit_;
+    int x = 2 + xinit_;
+    for(std::map<int,Board>::iterator board = boards_.begin();
+            board != boards_.end();
+            ++board)
+    {
+        if(selected_board_  == board) mvaddch(y,x,'*');
+        else mvaddch(y,x,' ');
+        ++y;
+    }
+
+}
 void uHTRPowerMezzMenu::display()
 {
 
@@ -192,62 +208,38 @@ void uHTRPowerMezzMenu::display()
     char header2[256];
     char header3[256];
     char bars[256];
-    int yinit = 5;
-    int xinit = 5;
-    int x = xinit+1 , y = 4 + yinit;
-    if (ncurses_)
-    {
-        attrset(A_REVERSE);
+    int x = xinit_+1 , y = 4 + yinit_;
 
-        for(int i = 1; i < COLS-1; i++)
-        {
-            mvaddch(0,i,'-');
-            mvaddch(LINES-1,i,'-');
-        }
-
-        for(int i = 1; i < LINES-1; i++)
-        {
-            mvaddch(i,0,'|');
-            mvaddch(i,COLS-1,'|');
-        }
-        mvaddch(0,0,'+');
-        mvaddch(0,COLS-1,'+');
-        mvaddch(LINES-1,0,'+');
-        mvaddch(LINES-1,COLS-1,'+');
-        refresh();
-
-        attrset(A_NORMAL);
+    attrset(A_NORMAL);
 
 
-        // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
-        // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
-        sprintf(header1, " Board |          Mezz 1        |         Mezz 2         |         Mezz 3         |         Mezz 4         |         Mezz 5         |");
-        sprintf(header2, "       |Temp(C) Volt(V) Power(W)|   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |");
-        sprintf(header3, "-------|------------------------|------------------------|------------------------|------------------------|------------------------|");
-        sprintf(bars,    "       |                        |                        |                        |                        |                        |");
-        //"   88  |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |");
-        //         |1234567 1234567 1234567 | 
-        //         7         -25-           32                       57                       82                       107                      132 
+    // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
+    // 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012
+    sprintf(header1, " Board |          Mezz 1        |         Mezz 2         |         Mezz 3         |         Mezz 4         |         Mezz 5         |    Time  |");
+    sprintf(header2, "       |Temp(C) Volt(V) Power(W)|   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power |   Temp    Volt   Power | DD:HH:MM |");
+    sprintf(header3, "-------|------------------------|------------------------|------------------------|------------------------|------------------------|----------|");
+    sprintf(bars,    "       |                        |                        |                        |                        |                        |          |");
+    //               "   88  |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 |  12.34   12.34   12.34 | 12:12:12 |");
+    //                       |1234567 1234567 1234567 | 
+    //                       7         -25-           32                       57                       82                       107                      132 
 
-        mvaddstr(yinit+1,xinit+1,header1);
-        mvaddstr(yinit+2,xinit+1,header2);
-        mvaddstr(yinit+3,xinit+1,header3);
+    mvaddstr(yinit_+1,xinit_+1,header1);
+    mvaddstr(yinit_+2,xinit_+1,header2);
+    mvaddstr(yinit_+3,xinit_+1,header3);
 
-
-    }
     char buff[256];
 
-    for(std::map<int,Board>::iterator board = boards.begin();
-            board != boards.end();
-            board++)
+    for(std::map<int,Board>::iterator board = boards_.begin();
+            board != boards_.end();
+            ++board)
     {
-        if(ncurses_) mvaddstr(y,x, bars);
+         mvaddstr(y,x, bars);
 
         Board * b =  &board->second;
         //printf("Board %d",b->id); 
         sprintf(buff,"   %2d",b->id);
-        if(ncurses_) mvaddstr(y,x,buff);
-        else printw(buff);
+        mvaddstr(y,x,buff);
+        if(selected_board_  == board) mvaddch(y,x+1,'*');
         x+=8;
 
         //check connection
@@ -261,15 +253,27 @@ void uHTRPowerMezzMenu::display()
 
             if(retval == RETVAL_SUCCESS)
             {
-                b->mezzanines->monitor(true);
-                Mezzanines::iterator iM = b->mezzanines->begin();
-                for(;iM != b->mezzanines->end(); iM++)
+                if(b->pid != 0)
                 {
-                    sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
+                    b->mezzanines->monitor(true);
+                    Mezzanines::iterator iM = b->mezzanines->begin();
+                    for(;iM != b->mezzanines->end(); iM++)
+                    {
+                        sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
 
-                    if(ncurses_) mvaddstr(y,x,buff);
-                    else printw(buff);
-                    x+=25;
+                        mvaddstr(y,x,buff);
+                        x+=25;
+                    }
+                    int days = b->time / 60 / 60 / 24;
+                    int hours = (b->time / 60 / 60) % 24;
+                    int minutes = (b->time / 60) % 60;
+                    sprintf(buff," %02d:%02d:%02d",days,hours,minutes);
+                    //sprintf(buff,"%2d:%d", b->time,b->pid);
+                    mvaddstr(y,x,buff);
+                }
+                else
+                {
+                    sprintf(response,"No active test");
                 }
             }
             else
@@ -284,21 +288,17 @@ void uHTRPowerMezzMenu::display()
             fail = true;
         }
 
-        if(fail && ncurses_) mvaddstr(y,x, response);
-        if(fail &&!ncurses_) printw(response);
-        if(!ncurses_) printw("\n");
+        if(fail) mvaddstr(y,x, response);
         y++;
-        x=1+xinit;
+        x=1+xinit_;
 
     }
-    if(ncurses_) mvaddstr(LINES-3,2,"Command1: ");
-    else printw("Command2: ");
 }
 
 void uHTRPowerMezzMenu::query_servers()
 {
-    for(std::map<int,Board>::iterator board = boards.begin();
-            board != boards.end();
+    for(std::map<int,Board>::iterator board = boards_.begin();
+            board != boards_.end();
             board++)
     {
         Board * b =  &board->second;
@@ -307,8 +307,14 @@ void uHTRPowerMezzMenu::query_servers()
         if(b->isConnected)
         {
             b->s20->readTest(ret);
-            b->pid = ret[0];
+            b->pid = ret[1];
             b->time = ret[0];
+
+        }
+        else
+        {
+            b->pid = 0;
+            b->time = 0;
         }
     }
 }
@@ -318,30 +324,77 @@ int uHTRPowerMezzMenu::start_test()
     int key_code;
     if(( key_code = getch()) == ERR)
     {
-        mvaddstr(LINES-3,15,"No input");
         return 0;
     }
     else
     {
-        int board = key_code - '0';
-        char buff[16];
-        sprintf(buff, "Board %c", key_code);
-        mvaddstr(LINES-4,15,buff);
-        std::map<int, Board>::iterator b = boards.find(board);
-        if(b != boards.end())
+        char buff[64];
+        switch(mmode_)
         {
-            pid_t pid = fork();
-            if(pid == 0) return board;
+            case NORMAL:
+                sprintf(buff,"                                ");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                switch(key_code)
+                {
+                    case KEY_DOWN:
+                        ++selected_board_;
+                        if(selected_board_ == boards_.end())
+                            selected_board_ = boards_.begin();
+                        draw_star();
+                        break;
+                    case KEY_UP:
+                        if(selected_board_ == boards_.begin())
+                        {
+                            selected_board_ = boards_.end();
+                            --selected_board_;
+                        }
+                        else 
+                            --selected_board_;
+                        draw_star();
+                        break;
+                    case 'q':
+                        return -1;
+                        break;
+                    case 's':
+                        sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        mmode_ = STARTING;
+                        break;
+                    case 'k':
+                        sprintf(buff,"Kill test on board %d [y,N]:    ",selected_board_->first);
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        mmode_ = STOPPING;
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case STARTING:
+                if(key_code == 'y')
+                {
+                    pid_t pid = fork();
+                    if(pid == 0) return selected_board_->first;
+                }
+                mmode_ = NORMAL;
+            case STOPPING:
+                if(key_code == 'y')
+                {
+                    if (selected_board_->second.isConnected && selected_board_->second.pid != 0)
+                        kill(selected_board_->second.pid,SIGINT);
+                }
+                mmode_ = NORMAL;
+            default:
+                break;
         }
-        else if(key_code == 'q') return -1;
+
         return 0;
     }
 }
 
 void uHTRPowerMezzMenu::quit()
 {
-    for(std::map<int,Board>::iterator board = boards.begin();
-            board != boards.end();
+    for(std::map<int,Board>::iterator board = boards_.begin();
+            board != boards_.end();
             board++)
     {
         //Board * b =  &board->second;

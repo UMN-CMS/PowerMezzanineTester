@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <signal.h>
+#include <curses.h>
 #include "io.h"
 
 #include "uHTRPowerMezzInterface.h"
@@ -327,7 +328,7 @@ int main(int argc, char* argv[])
         uHTRPowerMezzMenu menu(config_lines,isV2,true);
         for(int loops = 0;true;loops++)
         {
-            if( loops % 100 ) 
+            if( !(loops % 100) ) 
             {
                 menu.query_servers();
                 menu.display();
@@ -342,7 +343,6 @@ int main(int argc, char* argv[])
             }
             else if(boardID == -1) menu.quit();
 
-            printf("boardID == %d", boardID);
             runTest = true;
 
             time_t rawtime;
@@ -510,18 +510,14 @@ int main(int argc, char* argv[])
         if(retval) io::printf("\nExit with value: %s\n", retmessage);
     }
 }
-
-//======================================================================
-// Test procedures for uHTR POWER MODULE and uHTR AUX_POWER MODULE
-//======================================================================
-
+//if interupt turn off loads and stop test
 void  INThandler(int sig)
 {
     signal(sig, SIG_IGN);
 
     io::printf("\n***************************************** \n");
-    io::printf("**** Turning off power to Mezzanines **** \n");
-    io::printf("***************************************** \n");
+    io::printf(  "**** Turning off power to Mezzanines **** \n");
+    io::printf(  "***************************************** \n");
     active_mezzanines->setPrimaryLoad(false, false);
     active_mezzanines->setSecondaryLoad(false, false, false, false);
     active_mezzanines->setRun(false);
@@ -529,6 +525,11 @@ void  INThandler(int sig)
     active_s20->stopTest();
     exit(0);
 }
+
+//======================================================================
+// Test procedures for uHTR POWER MODULE and uHTR AUX_POWER MODULE
+//======================================================================
+
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
     active_s20 = &s20;

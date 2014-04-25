@@ -160,7 +160,14 @@ int RPiInterface::i2c_write(int sa, char * buf, int sz)
     if(!open_socket()) return 1;
 
     send_header(sa,WRITE,sz);
-    boost::asio::write(*s, boost::asio::buffer(buf, sz));
+    try
+    {
+        boost::asio::write(*s, boost::asio::buffer(buf, sz));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in i2c_write: " << e.what() << "\n";
+    }
 
     errno_ = recieve_error();
     s->close();
@@ -178,7 +185,14 @@ int RPiInterface::i2c_read(int sa, char * buf, int sz)
     if(!open_socket()) return 1;
     send_header(sa,READ,sz);
 
-    boost::asio::read(*s, boost::asio::buffer(buf,sz));
+    try
+    {
+        boost::asio::read(*s, boost::asio::buffer(buf,sz));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in i2c_read: " << e.what() << "\n";
+    }
     errno_ = recieve_error();
     s->close();
     delete s;
@@ -196,7 +210,14 @@ void RPiInterface::lcd_write(char * buf, int sz)
     if(!open_socket()) return;
     send_header(0,DISPLAY,sz);
 
-    boost::asio::write(*s, boost::asio::buffer(buf, sz));
+    try
+    {
+        boost::asio::write(*s, boost::asio::buffer(buf, sz));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in lcd_write: " << e.what() << "\n";
+    }
 
     errno_ = recieve_error();
 
@@ -252,15 +273,28 @@ void RPiInterface::send_header(int address, Mode mode, int length)
     header[2]=length;
     header[3]=adChan_;
     header[4]=bbChan_;
-    boost::asio::write(*s, boost::asio::buffer(header, 5*sizeof(int)));
+    try{
+        boost::asio::write(*s, boost::asio::buffer(header, 5*sizeof(int)));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in send_header: " << e.what() << "\n";
+    }
 #endif
 }
-        
+
 int RPiInterface::recieve_error()
 {
 #ifdef URPI
     int error = 0;
-    boost::asio::read(*s, boost::asio::buffer(&error,sizeof(error)));
+    try
+    {
+        boost::asio::read(*s, boost::asio::buffer(&error,sizeof(error)));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in recieve_error: " << e.what() << "\n";
+    }
     return error;
 #else 
     return 0;
@@ -331,7 +365,16 @@ void RPiInterface::readTest(int test[])
     if(!open_socket()) return;
     send_header(0,TIME,2);
 
-    boost::asio::read(*s, boost::asio::buffer(test,2));
+    test[0] = 0;
+    test[1] = 0;
+    try
+    {
+        boost::asio::read(*s, boost::asio::buffer(test,sizeof(int)*2));
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception in readTest: " << e.what() << "\n";
+    }
     errno_ = recieve_error();
 
     s->close();

@@ -23,17 +23,30 @@ class uHTRPowerMezzMenu
         uHTRPowerMezzInterface * s20;
         Mezzanines * mezzanines;
     };
+    enum MenuMode
+    {
+        NORMAL,
+        STARTING,
+        STOPPING,
+        IN_TESTER
+    };
+
+
     public:
         uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses);
         void display();
+        void query_servers();
         void quit();
         int start_test();
-        int check_voltages(int i);
-        void query_servers();
 
     private:
-        std::map<int, Board> boards;
-        bool ncurses_;
+        int check_voltages(int i);
+        void draw_star();
+        MenuMode mmode_;
+        std::map<int, Board>::iterator  selected_board_;
+        std::map<int, Board> boards_;
+        const int yinit_;
+        const int xinit_;
         
 };
 
