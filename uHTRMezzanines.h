@@ -191,6 +191,7 @@ class Mezzanines : public std::vector<Mezzanine*>
         void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
         bool labelPM(const std::string tester, const std::string site);
         bool labelAPM(const std::string tester, const std::string site);
+        bool labelAll(const std::string tester, const std::string site);
         void readEeprom();
 
         int init();

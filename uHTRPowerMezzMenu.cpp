@@ -1,5 +1,6 @@
 #include "uHTRPowerMezzMenu.h"
 #include <curses.h>
+#include "io.h"
 
 extern std::string parseto(std::string &buff, std::string del = ",")
 {
@@ -21,7 +22,6 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART; /* Restart functions if
                                  interrupted by handler */
-    mmode_ = NORMAL;
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
             it++)
@@ -125,10 +125,12 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     }
     erase();
     noecho();
-    nodelay(stdscr, TRUE);
+    nodelay(stdscr, true);
     keypad(stdscr,true);
     cbreak(); 
     curs_set(0);
+
+    io::enable_curses(yinit_ + 7 + boards_.size(),xinit_ + 2);
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
@@ -204,6 +206,7 @@ void uHTRPowerMezzMenu::draw_star()
 void uHTRPowerMezzMenu::display()
 {
 
+    erase();
     char header1[256];
     char header2[256];
     char header3[256];
@@ -318,6 +321,41 @@ void uHTRPowerMezzMenu::query_servers()
         }
     }
 }
+char uHTRPowerMezzMenu::readch()
+{
+    echo();
+    raw();
+    nodelay(stdscr, false);
+
+    char key_code = getch();
+
+    noecho();
+    cbreak();
+    nodelay(stdscr, true);
+    return key_code;
+}
+
+void uHTRPowerMezzMenu::readstr(char str[])
+{
+    echo();
+    raw();
+    nodelay(stdscr, false);
+
+    //int i = 0;
+    //do
+    //{
+    //    str[i] = getch();
+    //}
+    //while( (str[i] != '\n') && i++);
+    //str[i] = '\0';
+
+    getstr(str);
+    noecho();
+    cbreak();
+    nodelay(stdscr, true);
+}
+
+
 int uHTRPowerMezzMenu::start_test()
 {
 
@@ -329,64 +367,69 @@ int uHTRPowerMezzMenu::start_test()
     else
     {
         char buff[64];
-        switch(mmode_)
+        switch(key_code)
         {
-            case NORMAL:
-                sprintf(buff,"                                ");
-                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                switch(key_code)
-                {
-                    case KEY_DOWN:
-                        ++selected_board_;
-                        if(selected_board_ == boards_.end())
-                            selected_board_ = boards_.begin();
-                        draw_star();
-                        break;
-                    case KEY_UP:
-                        if(selected_board_ == boards_.begin())
-                        {
-                            selected_board_ = boards_.end();
-                            --selected_board_;
-                        }
-                        else 
-                            --selected_board_;
-                        draw_star();
-                        break;
-                    case 'q':
-                        return -1;
-                        break;
-                    case 's':
-                        sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
-                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                        mmode_ = STARTING;
-                        break;
-                    case 'k':
-                        sprintf(buff,"Kill test on board %d [y,N]:    ",selected_board_->first);
-                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                        mmode_ = STOPPING;
-                        break;
-                    default:
-                        break;
-                }
+            case KEY_DOWN:
+                ++selected_board_;
+                if(selected_board_ == boards_.end())
+                    selected_board_ = boards_.begin();
+                draw_star();
                 break;
-            case STARTING:
-                if(key_code == 'y')
+            case KEY_UP:
+                if(selected_board_ == boards_.begin())
                 {
+                    selected_board_ = boards_.end();
+                    --selected_board_;
+                }
+                else 
+                    --selected_board_;
+                draw_star();
+                break;
+            case 'q':
+                return -1;
+                break;
+            case 's':
+                sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                {
+                    char resp = readch();
+                    sprintf(buff,"                                ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    if(resp != 'y') break;
+
+                    sprintf(buff,"Enter name[%s]:",tester);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    char tstr[64];
+                    readstr(tstr);
+                    sprintf(buff,"                                ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    if(strlen(tstr) != 0) 
+                        sprintf(tester,"%s",tstr);
+
+                    selected_board_->second.mezzanines->labelAll(tester,"Minnesota");
+
                     pid_t pid = fork();
                     if(pid == 0) return selected_board_->first;
                 }
-                mmode_ = NORMAL;
-            case STOPPING:
-                if(key_code == 'y')
+                break;
+            case 'k':
+                sprintf(buff,"Kill test on board %d [y,N]:    ",selected_board_->first);
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                 {
+                    char resp = readch();
+                    sprintf(buff,"                                ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                    if(resp != 'y') break;
                     if (selected_board_->second.isConnected && selected_board_->second.pid != 0)
                         kill(selected_board_->second.pid,SIGINT);
                 }
-                mmode_ = NORMAL;
+                break;
             default:
                 break;
         }
-
         return 0;
     }
 }

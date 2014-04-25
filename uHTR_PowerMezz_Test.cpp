@@ -345,6 +345,8 @@ int main(int argc, char* argv[])
 
             runTest = true;
 
+            io::disable_curses();
+
             time_t rawtime;
             struct tm * timeinfo;
             char buffer [80];

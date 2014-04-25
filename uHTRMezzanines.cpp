@@ -1028,6 +1028,21 @@ void Mezzanines::setSecondaryLoad(const bool l1, const bool l2, const bool l3, c
         if(!(*iM)->isPM) (*iM)->setSecondaryLoad(l1,l2,l3,l4);
     }
 }
+
+bool Mezzanines::labelAll(const std::string tester, const std::string site)
+{
+    bool ret = false;
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM) 
+    {
+        boost::mutex::scoped_lock l(*s20mtx_);
+        if(!(*iM)->isPresent()) continue;
+
+        ret |= (*iM)->programEeprom(tester, site);
+    }
+    return ret;
+}
+
 bool Mezzanines::labelPM(const std::string tester, const std::string site)
 {
     bool ret = false;
