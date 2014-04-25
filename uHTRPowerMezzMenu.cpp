@@ -13,7 +13,6 @@ extern std::string parseto(std::string &buff, std::string del = ",")
 
 uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses)
 {
-    loops_ = 100;
     ncurses_ = ncurses;
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
@@ -181,12 +180,6 @@ int uHTRPowerMezzMenu::check_voltages(int id)
 
 void uHTRPowerMezzMenu::display()
 {
-    loops_++;
-    if(loops_ < 100) 
-    {
-        return;
-    }
-    loops_ = 0;
 
     char header1[256];
     char header2[256];
@@ -253,7 +246,7 @@ void uHTRPowerMezzMenu::display()
         //check connection
         char response[32];
         bool fail = false;
-        if (b->s20->can_connect())
+        if (b->isConnected)
         {
             int retval = check_voltages(b->id);
             char retmessage[32];
@@ -295,6 +288,23 @@ void uHTRPowerMezzMenu::display()
     else printw("Command2: ");
 }
 
+void uHTRPowerMezzMenu::query_servers()
+{
+    for(std::map<int,Board>::iterator board = boards.begin();
+            board != boards.end();
+            board++)
+    {
+        Board * b =  &board->second;
+        int ret[2];
+        b->isConnected = b->s20->can_connect();
+        if(b->isConnected)
+        {
+            b->s20->readTest(ret);
+            b->pid = ret[0];
+            b->time = ret[0];
+        }
+    }
+}
 int uHTRPowerMezzMenu::start_test()
 {
 

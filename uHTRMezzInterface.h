@@ -39,6 +39,8 @@ public:
     bool can_connect();
     void init();
     void startTest(int pid);
+    void stopTest();
+    void readTest(int test[]);
     
     inline unsigned int getError()
     {

@@ -13,6 +13,9 @@ class uHTRPowerMezzMenu
     {
         int id;
         int adChan;
+        int pid;
+        int time;
+        bool isConnected;
         char adapter[4];
         char hostname[32];
         char port[8];
@@ -26,10 +29,10 @@ class uHTRPowerMezzMenu
         void quit();
         int start_test();
         int check_voltages(int i);
+        void query_servers();
 
     private:
         std::map<int, Board> boards;
-        int loops_;
         bool ncurses_;
         
 };

@@ -88,7 +88,7 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
                 rpi.stopTest(adChan);
                 break;
             case TIME:
-                rpi.readTime(adChan,ret);
+                rpi.readTest(adChan,ret);
                 boost::asio::write(*sock, boost::asio::buffer(ret,length));
                 break;
             default:
