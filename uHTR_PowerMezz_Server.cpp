@@ -36,7 +36,7 @@ enum Mode {
 typedef tcp::socket*  socket_ptr;
 
 
-void session(socket_ptr sock, RPiInterfaceServer rpi )
+void session(socket_ptr sock, RPiInterfaceServer& rpi )
 {
     try
     {
@@ -111,7 +111,6 @@ void server(boost::asio::io_service& io_service, short port)
     {
         socket_ptr sock(new tcp::socket(io_service));
         a.accept(*sock);
-        printf("Socket accepted\n");
         session(sock,rpi);
         delete sock;
     }
