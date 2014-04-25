@@ -19,6 +19,8 @@ protected:
 
 #define BOARD RASPBERRY_PI
 #include "gnublin-api/gnublin.h"
+#include <time.h>
+#include <map>
 
 #endif
 
@@ -29,9 +31,14 @@ public:
     int i2c_write(int sa, char * buf, int sz);
     int i2c_read(int sa, char * buf, int sz);
     void lcd_write(char *, int sz);
+    void startTest(int pid, int adChan);
+    void stopTest(int adChan);
+    void readTime(int adChan, int data[]);
 
 private:
     void configADC128();
+    std::map<int,time_t> times;
+    std::map<int,int> pids;
 #ifdef URPI
     gnublin_i2c i2c;
 #else

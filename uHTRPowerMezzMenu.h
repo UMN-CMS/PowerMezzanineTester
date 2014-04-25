@@ -21,7 +21,7 @@ class uHTRPowerMezzMenu
         Mezzanines * mezzanines;
     };
     public:
-        uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2);
+        uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses);
         void display();
         void quit();
         int start_test();
@@ -29,6 +29,8 @@ class uHTRPowerMezzMenu
 
     private:
         std::map<int, Board> boards;
+        int loops_;
+        bool ncurses_;
         
 };
 

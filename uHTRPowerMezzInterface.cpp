@@ -1,5 +1,6 @@
 #include "uHTRPowerMezzInterface.h"
 #include <cstdio>
+#include "io.h"
 
 // i2c slave addresses
 #define I2C_SADDRESS_BASEMUX   0x70
@@ -144,7 +145,7 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
                     buff_[0] = I2C_MODADC_WRITE_DEFAULT | I2C_MODADC_WRITE_CHAN4;
                     break;
                 default:
-                    printf("INVALID ADC CHANNEL\n");
+                    io::printf("INVALID ADC CHANNEL\n");
                     break;
             }
 
@@ -163,7 +164,7 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
         {
             saddress = V2_I2C_SADDRESS_APMBASE_ADC;
 
-            if(chan >= 8) printf("INVALID ADC CHANNEL (ADC128)\n");
+            if(chan >= 8) io::printf("INVALID ADC CHANNEL (ADC128)\n");
 
             // 0x20 is start of output registers 
             buff_[0] = 0x20 + chan;
@@ -194,7 +195,7 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
                 buff_[0] = I2C_MODADC_WRITE_DEFAULT | I2C_MODADC_WRITE_CHAN4;
                 break;
             default:
-                printf("INVALID ADC CHANNEL\n");
+                io::printf("INVALID ADC CHANNEL\n");
                 break;
         }
 
@@ -202,7 +203,7 @@ double uHTRPowerMezzInterface::readMezzADC(const int adc, const int chan)
         unsigned int saddress = 0;
         if(adc == 0) saddress = I2C_SADDRESS_MODADC_28;
         else if (adc == 1) saddress = I2C_SADDRESS_MODADC_26;
-        else printf("INVALID ADC NUMBER\n");
+        else io::printf("INVALID ADC NUMBER\n");
         //printf("write retval: %d    I2C status: %#x   buffval: %x\n", com->getError(),com->getError(), buff_[0]);
 
         error |= com->i2c_write(saddress, (char*)buff_, 1);
@@ -364,7 +365,7 @@ void uHTRPowerMezzInterface::toggleMezzsLoad(const int channel, const bool state
             	state?(buff_[1] |= I2C_MARGCTRL_OUTPUT_C6):(buff_[1] &= ~I2C_MARGCTRL_OUTPUT_C6);  //state byte
             	break;
             default:
-            	printf("Invalid mosfet channel\n");
+                io::printf("Invalid mosfet channel\n");
             	return;   	
         }
         com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2 );  //set register
@@ -419,21 +420,21 @@ void uHTRPowerMezzInterface::printEEPROM_data(const EEPROM_data data, const bool
     {
         for(unsigned int i = 0; i < EEPROM_DATA_SIZE; i++)
         {
-            printf("%02x ", *((uint8_t*) & data + i));
-            if((i % 8) == 7) printf("\n");
+            io::printf("%02x ", *((uint8_t*) & data + i));
+            if((i % 8) == 7) io::printf("\n");
         }
     }
     else
     {
-        printf("Data format version: %d\n", data.data_format_version);
-        printf("Mezz type code:      %d\n", data.mezz_type_code);
-        printf("Mezz subtype code:   %d\n", data.mezz_subtype_code);
-        printf("Mezz type (string):  %s\n", data.mezz_type);
-        printf("Serial number:       %d\n", 0xffff & ((((int)(0xff & data.serial_number[1])) << 8) + (int)(0xff & data.serial_number[0])));
-        printf("Manufacture date:    %s\n", data.manu_date);
-        printf("Manufacture site:    %s\n", data.manu_site);
-        printf("Manufacture tester:  %s\n", data.manu_tester);
-        printf("Test release:        %s\n", data.test_release);
+        io::printf("Data format version: %d\n", data.data_format_version);
+        io::printf("Mezz type code:      %d\n", data.mezz_type_code);
+        io::printf("Mezz subtype code:   %d\n", data.mezz_subtype_code);
+        io::printf("Mezz type (string):  %s\n", data.mezz_type);
+        io::printf("Serial number:       %d\n", 0xffff & ((((int)(0xff & data.serial_number[1])) << 8) + (int)(0xff & data.serial_number[0])));
+        io::printf("Manufacture date:    %s\n", data.manu_date);
+        io::printf("Manufacture site:    %s\n", data.manu_site);
+        io::printf("Manufacture tester:  %s\n", data.manu_tester);
+        io::printf("Test release:        %s\n", data.test_release);
     }
 
     return;

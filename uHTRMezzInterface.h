@@ -38,6 +38,7 @@ public:
 
     bool can_connect();
     void init();
+    void startTest(int pid);
     
     inline unsigned int getError()
     {

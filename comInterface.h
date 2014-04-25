@@ -10,6 +10,7 @@ public:
     virtual void set_bbChan(int bbChan) {}
 
     virtual bool can_connect() {return false;}
+    virtual void startTest(int pid) {}
 
     virtual bool isRPi() = 0;
     int getError()
@@ -56,7 +57,10 @@ enum Mode
 {
     READ = 1,
     WRITE = 2,
-    DISPLAY = 3
+    DISPLAY = 3,
+    START = 4,
+    STOP = 5,
+    TIME = 6
 };
 
 class RPiInterface : public ComInterface
@@ -73,7 +77,9 @@ public:
 
     bool open_socket();
     bool can_connect();
-
+    void startTest(int pid);
+    void endTest();
+    int readTime(int& pid);
 
 private:
     void send_header(int address, Mode mode, int sz);

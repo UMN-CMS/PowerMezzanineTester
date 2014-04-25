@@ -1,5 +1,6 @@
 #include "uHTRMezzInterface.h"
 #include <cstdio>
+#include "io.h"
 
 // i2c slave addresses
 #define I2C_SADDRESS_BASEMUX   0x70
@@ -123,10 +124,10 @@ void uHTRMezzInterface::printMezzMAC()
 	com->i2c_read(V2_I2C_SADDRESS_RPI_MUX, (char*)buff_, 1);
 	int i = 0;
 	for(; i < 8; i++) if((buff_[0] >> i)&0x1) break;
-	printf("RPi adapter channel: %d\n", i);
+    io::printf("RPi adapter channel: %d\n", i);
     }
 
-    printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", MAC_[0]&0xFF, MAC_[1]&0xFF, MAC_[2]&0xFF, MAC_[3]&0xFF, MAC_[4]&0xFF, MAC_[5]&0xFF);
+    io::printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", MAC_[0]&0xFF, MAC_[1]&0xFF, MAC_[2]&0xFF, MAC_[3]&0xFF, MAC_[4]&0xFF, MAC_[5]&0xFF);
 }
 
 void uHTRMezzInterface::copyMezzMAC(char * MAC)
@@ -150,4 +151,9 @@ void uHTRMezzInterface::init()
 bool uHTRMezzInterface::can_connect()
 {
     return com->can_connect();
+}
+
+void uHTRMezzInterface::startTest(int pid)
+{
+    com->startTest(pid);
 }

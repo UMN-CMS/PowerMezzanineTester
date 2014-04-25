@@ -27,7 +27,10 @@ const int max_length = 1024;
 enum Mode {
     READ = 1,
     WRITE = 2,
-    DISPLAY =  3
+    DISPLAY = 3,
+    START = 4,
+    STOP = 5,
+    TIME = 6
 };
 
 typedef tcp::socket*  socket_ptr;
@@ -47,16 +50,21 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
         int bbChan = header.at(4);
 
         printf("header: %x,%i,%i,%i,%i \n",address,mode,length,adChan,bbChan);
-        //Set RPI Mux 
-        char buff = (char)(1 << adChan);
-        int error = rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
+        int error = 0;
+        if (mode == READ || mode == WRITE)
+        {
+            //Set RPI Mux 
+            char buff = (char)(1 << adChan);
+            error |= rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
 
-        //set board mux
-        buff = (char)(1 << bbChan);
-        error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
+            //set board mux
+            buff = (char)(1 << bbChan);
+            error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
+        }
 
         //switch over mode
         char data[max_length];
+        int ret[2];
         std::string response;
         switch (mode)
         {
@@ -72,6 +80,16 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
             case DISPLAY:
                 boost::asio::read(*sock, boost::asio::buffer(data,length));
                 rpi.lcd_write(data,length);
+                break;
+            case START:
+                rpi.startTest(adChan,address);
+                break;
+            case STOP:
+                rpi.stopTest(adChan);
+                break;
+            case TIME:
+                rpi.readTime(adChan,ret);
+                boost::asio::write(*sock, boost::asio::buffer(ret,length));
                 break;
             default:
                 std::cerr << "invalid mode\n";

@@ -1,4 +1,5 @@
 #include "uHTRMezzanines.h"
+#include "io.h"
 
 std::map<std::string, std::pair<unsigned int, unsigned int> > Mezzanine::snList;
 unsigned int Mezzanine::sn_max[4];
@@ -112,23 +113,23 @@ void Mezzanine::readEeprom()
 
     if(!s20.readMezzMAC())
     {
-        if(isPM) printf("Power Mezzanine %s EEPROM info readback\n", slot);
-        else printf("Aux Power Mezzanine %s EEPROM info readback\n", slot);
+        if(isPM) io::printf("Power Mezzanine %s EEPROM info readback\n", slot);
+        else io::printf("Aux Power Mezzanine %s EEPROM info readback\n", slot);
         s20.printMezzMAC();
         uHTRPowerMezzInterface::EEPROM_data t_data;
         s20.readMezzEeprom(&t_data);
         s20.printEEPROM_data(t_data, false);
-        printf("\n");
+        io::printf("\n");
     }
     else
     {
-        if(isPM) printf("No Power Mezzanine %s Detected.\n", slot);
-        else printf("No Aux Power Mezzanine %s Detected.\n", slot);
+        if(isPM) io::printf("No Power Mezzanine %s Detected.\n", slot);
+        else io::printf("No Aux Power Mezzanine %s Detected.\n", slot);
 	if(s20.isRPi_)
 	{
 	    s20.printMezzMAC();
 	}
-	printf("\n");
+    io::printf("\n");
     }
 
     //deactivate power mezzanines
@@ -155,7 +156,7 @@ void Mezzanine::loadSSNFile(const unsigned int skipBlockSize)
                     Mezzanine::snList[std::string(mac)] = std::make_pair(mezzType, sn);
                     if(sn > Mezzanine::sn_max[mezzType]) Mezzanine::sn_max[mezzType] = sn;
                 }
-                else printf("Invalid mezzanine type in serial number file for mezzanine %s.\n", mac);
+                else io::printf("Invalid mezzanine type in serial number file for mezzanine %s.\n", mac);
             }
         }
         fclose(f_SN);
@@ -165,7 +166,7 @@ void Mezzanine::loadSSNFile(const unsigned int skipBlockSize)
     }
     else
     {
-        printf("!!!Serial number file not found, dummy SNs will be written (0xffff)!!!\n");
+        io::printf("!!!Serial number file not found, dummy SNs will be written (0xffff)!!!\n");
         for(int i = 0; i < 4; i++) Mezzanine::sn_max[i] = (unsigned int)(-1);
     }
 }
@@ -174,7 +175,7 @@ unsigned int Mezzanine::getSN(const char * const cmac, const mezzLabel ml)
 {
     if(Mezzanine::sn_max[ml] == (unsigned int) - 1)
     {
-        printf("!!!Invalid serial number warning, no entry into database will be made!!!\n");
+        io::printf("!!!Invalid serial number warning, no entry into database will be made!!!\n");
         return 0xffff;
     }
 
@@ -195,7 +196,7 @@ unsigned int Mezzanine::getSN(const char * const cmac, const mezzLabel ml)
         }
         else
         {
-            printf("!!!Serial number file write error, dummy SNs will be written (0xffff)!!!\n");
+            io::printf("!!!Serial number file write error, dummy SNs will be written (0xffff)!!!\n");
             return 0xffff;
         }
     }
@@ -685,7 +686,7 @@ bool PM::programEeprom(std::string tester, std::string site)
     time(&dummy_time);
     ct = gmtime(&dummy_time);
 
-    if(s20.readMezzMAC()) printf("!!!PM not detected for labeling!!!\n");
+    if(s20.readMezzMAC()) io::printf("!!!PM not detected for labeling!!!\n");
     else
     {
         // Make and populate data structure
@@ -727,7 +728,7 @@ bool PM::programEeprom(std::string tester, std::string site)
         s20.writeMezzEeprom(data);
         if(s20.getError())
         {
-            printf("!!!PM eeprom i2c write error!!!\n");
+            io::printf("!!!PM eeprom i2c write error!!!\n");
             s20.updateSUB20Display("\fPM EPROM\nw failed");
             isError = true;
         }
@@ -739,12 +740,12 @@ bool PM::programEeprom(std::string tester, std::string site)
             for(unsigned int i = 0; i < uHTRPowerMezzInterface::EEPROM_DATA_SIZE; i++) isError |= (*((uint8_t*) & data + i) != *((uint8_t*) & rb_data + i));
             if(isError)
             {
-                printf("!!!PM EEPROM verify failed!!!\n");
+                io::printf("!!!PM EEPROM verify failed!!!\n");
                 s20.updateSUB20Display("\fPM EPROM\nw failed");
             }
             else
             {
-                printf("PM EEPROM write successful\n");
+                io::printf("PM EEPROM write successful\n");
                 s20.updateSUB20Display("\fPM EPROM\nwrite OK");
             }
         }
@@ -772,7 +773,7 @@ bool APM::programEeprom(std::string tester, std::string site)
 
     bool isError = false;
 
-    if(s20.readMezzMAC()) printf("!!!APM not detected for labeling!!!\n");
+    if(s20.readMezzMAC()) io::printf("!!!APM not detected for labeling!!!\n");
     else
     {
         // Make and populate data structure
@@ -814,7 +815,7 @@ bool APM::programEeprom(std::string tester, std::string site)
         s20.writeMezzEeprom(data);
         if(s20.getError())
         {
-            printf("!!!APM eeprom i2c write error!!!\n");
+            io::printf("!!!APM eeprom i2c write error!!!\n");
             s20.updateSUB20Display("\fAM EPROM\nw failed");
             isError = true;
         }
@@ -826,12 +827,12 @@ bool APM::programEeprom(std::string tester, std::string site)
             for(unsigned int i = 0; i < uHTRPowerMezzInterface::EEPROM_DATA_SIZE; i++) isError |= (*((uint8_t*) & data + i) != *((uint8_t*) & rb_data + i));
             if(isError)
             {
-                printf("!!!APM EEPROM verify failed!!!\n");
+                io::printf("!!!APM EEPROM verify failed!!!\n");
                 s20.updateSUB20Display("\fAM EPROM\nw failed");
             }
             else
             {
-                printf("APM EEPROM write successful\n");
+                io::printf("APM EEPROM write successful\n");
                 s20.updateSUB20Display("\fAM EPROM\nwrite OK");
             }
         }
