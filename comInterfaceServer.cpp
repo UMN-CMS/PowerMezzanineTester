@@ -55,6 +55,7 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
 
 void RPiInterfaceServer::startTest(int pid, int adChan)
 {
+    printf("Starting channel %d with pid %d\n",adChan, pid);
     pids[adChan] = pid;
     time_t rawtime;
     time(&rawtime);
@@ -63,8 +64,18 @@ void RPiInterfaceServer::startTest(int pid, int adChan)
 
 void RPiInterfaceServer::stopTest(int adChan)
 {
-    pids.erase(adChan);
-    times.erase(adChan);
+    std::map<int,time_t>::iterator it = times.find(adChan);
+    if(it != times.end())
+    {
+        int pid = pids[adChan];
+        printf("Stopping channel %d with pid %d\n",adChan, pid);
+        pids.erase(adChan);
+        times.erase(adChan);
+    }
+    else
+    {
+        printf("No test on channel %d\n",adChan);
+    }
 }
 
 void RPiInterfaceServer::readTest(int adChan, int data[])
@@ -74,6 +85,9 @@ void RPiInterfaceServer::readTest(int adChan, int data[])
     {
         data[0] = times[adChan];
         data[1] = pids[adChan];
+        time_t rawtime;
+        time(&rawtime);
+        printf("Channel %d: Time %d, pid: %d", adChan, rawtime - data[0], data[1]);
     }
 }
 

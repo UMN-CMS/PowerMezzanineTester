@@ -82,7 +82,7 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
                 rpi.lcd_write(data,length);
                 break;
             case START:
-                rpi.startTest(adChan,address);
+                rpi.startTest(address,adChan);
                 break;
             case STOP:
                 rpi.stopTest(adChan);
