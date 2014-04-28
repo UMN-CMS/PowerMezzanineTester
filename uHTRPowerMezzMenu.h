@@ -16,6 +16,7 @@ class uHTRPowerMezzMenu
         int pid;
         int time;
         bool isConnected;
+        bool ready;
         char adapter[4];
         char hostname[32];
         char port[8];

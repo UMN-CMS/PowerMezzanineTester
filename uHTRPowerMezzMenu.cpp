@@ -98,6 +98,9 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
                 }
             }
         }
+        b.ready = false;
+        b.pid = 0;
+        b.time = 0;
         boards_[b.id] = b;
     
     }
@@ -106,22 +109,9 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     if (has_colors())
     {
         start_color();
-        /*if(can_change_color())
-          {
-          init_color(COLOR_RED, 500,0,0);
-          init_color(COLOR_YELLOW, 926,675,54);
-          init_pair(1, COLOR_RED,    COLOR_BLACK );
-          init_pair(2, COLOR_YELLOW, COLOR_BLACK );
-          init_pair(3, COLOR_BLACK,  COLOR_RED   );
-          init_pair(4, COLOR_BLACK,  COLOR_YELLOW);
-          }
-          else
-          {
-          init_pair(1, COLOR_GREEN,    COLOR_BLACK );
-          init_pair(2, COLOR_BLUE,     COLOR_BLACK );
-          init_pair(3, COLOR_BLACK,    COLOR_GREEN );
-          init_pair(4, COLOR_BLACK,    COLOR_BLUE  );
-          }*/
+        init_pair(1, COLOR_GREEN, COLOR_BLACK );
+        init_pair(2, COLOR_BLUE,  COLOR_BLACK );
+        init_pair(3, COLOR_RED,   COLOR_BLACK  );
     }
     erase();
     noecho();
@@ -130,7 +120,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     cbreak(); 
     curs_set(0);
 
-    io::enable_curses(yinit_ + 7 + boards_.size(),xinit_ + 2);
+    io::enable_curses(yinit_ + 7 + boards_.size(), LINES - 2 ,xinit_ + 2);
 }
 
 int uHTRPowerMezzMenu::check_voltages(int id)
@@ -191,6 +181,7 @@ int uHTRPowerMezzMenu::check_voltages(int id)
 
 void uHTRPowerMezzMenu::draw_star()
 {
+    attrset(COLOR_PAIR(2));
     int y = 4 + yinit_;
     int x = 2 + xinit_;
     for(std::map<int,Board>::iterator board = boards_.begin();
@@ -213,7 +204,7 @@ void uHTRPowerMezzMenu::display()
     char bars[256];
     int x = xinit_+1 , y = 4 + yinit_;
 
-    attrset(A_NORMAL);
+    attrset(COLOR_PAIR(1));
 
 
     // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
@@ -242,7 +233,12 @@ void uHTRPowerMezzMenu::display()
         //printf("Board %d",b->id); 
         sprintf(buff,"   %2d",b->id);
         mvaddstr(y,x,buff);
-        if(selected_board_  == board) mvaddch(y,x+1,'*');
+        if(selected_board_  == board) 
+        {
+            attrset(COLOR_PAIR(2));
+            mvaddch(y,x+1,'*');
+            attrset(COLOR_PAIR(1));
+        }
         x+=8;
 
         //check connection
@@ -277,21 +273,30 @@ void uHTRPowerMezzMenu::display()
                 else
                 {
                     sprintf(response,"No active test");
+                    fail = true;
+                    b->ready = true;
+                    attrset(COLOR_PAIR(2));
                 }
             }
             else
             {
-                sprintf(response,"%s",retmessage);
+                sprintf(response,"%s (is the board on?",retmessage);
                 fail = true;
+                attrset(COLOR_PAIR(3));
             }
         }
         else
         {
             sprintf(response,"Not Connected");
             fail = true;
+            attrset(COLOR_PAIR(2));
         }
 
-        if(fail) mvaddstr(y,x, response);
+        if(fail)
+        {
+            mvaddstr(y,x, response);
+            attrset(COLOR_PAIR(1));
+        }
         y++;
         x=1+xinit_;
 
@@ -318,6 +323,7 @@ void uHTRPowerMezzMenu::query_servers()
         {
             b->pid = 0;
             b->time = 0;
+            b->ready = false;
         }
     }
 }
@@ -389,6 +395,7 @@ int uHTRPowerMezzMenu::start_test()
                 return -1;
                 break;
             case 's':
+                if(!selected_board_->second.ready) break;
                 sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
                 mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                 {
@@ -410,7 +417,7 @@ int uHTRPowerMezzMenu::start_test()
                         sprintf(tester,"%s",tstr);
 
                     selected_board_->second.mezzanines->labelAll(tester,"Minnesota");
-
+                    display();
                     pid_t pid = fork();
                     if(pid == 0) return selected_board_->first;
                 }
@@ -424,7 +431,24 @@ int uHTRPowerMezzMenu::start_test()
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                     if(resp != 'y') break;
                     if (selected_board_->second.isConnected && selected_board_->second.pid != 0)
-                        kill(selected_board_->second.pid,SIGINT);
+                        if(kill(selected_board_->second.pid,SIGINT))
+                        {
+                            sprintf(buff,"Failed to kill %d pid with SIGINT. Try SIGKILL? [y/N]", selected_board_->second.pid);
+                            mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                            resp = readch();
+                            sprintf(buff,"                                ");
+                            mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                            if(resp != 'y') break;
+                            if(kill(selected_board_->second.pid,SIGKILL))
+                            {
+                                sprintf(buff,"Failed to kill %d pid with SIGKILL. You might need help. Attempting cleanup.", selected_board_->second.pid);
+                                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                                selected_board_->second.mezzanines->setPrimaryLoad(false, false);
+                                selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
+                                selected_board_->second.mezzanines->setRun(false);
+                                selected_board_->second.s20->stopTest();
+                            }
+                        }
                 }
                 break;
             default:
