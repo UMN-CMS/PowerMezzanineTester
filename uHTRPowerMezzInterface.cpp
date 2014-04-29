@@ -61,7 +61,7 @@ static void binary(T b)
     printf("\n");
 }
 
-uHTRPowerMezzInterface::uHTRPowerMezzInterface(int idev, bool v2, bool isRPi, char host[], char port[]) : uHTRMezzInterface(idev, v2, isRPi, host, port){ }
+uHTRPowerMezzInterface::uHTRPowerMezzInterface(int idev, bool v2, bool isRPi, const char host[], const char port[]) : uHTRMezzInterface(idev, v2, isRPi, host, port){ }
 
 void uHTRPowerMezzInterface::configADC128()
 {

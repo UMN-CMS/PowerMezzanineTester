@@ -135,7 +135,7 @@ using boost::asio::ip::tcp;
 
 boost::asio::io_service * RPiInterface::io_service = NULL;
 
-RPiInterface::RPiInterface(std::string host, std::string port) 
+RPiInterface::RPiInterface(const std::string host, const std::string port) 
 {
 #ifdef URPI
     if(io_service == NULL)

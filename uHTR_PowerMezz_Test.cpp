@@ -114,8 +114,9 @@ int main(int argc, char* argv[])
     bool runTest = false, labelPM = false, labelAPM = false, readEeproms = false, siteSet = false, testerSet = false;
     bool echo = false, k = false, isV2 = true, pSet = false, aSet = false, enable = false, disable = false;
     bool interactive = false;
-    char site[16], tester[16], echoString[32], cFileName[128] = "configuration.txt";
-    unsigned int sbSize = 0, sub20Num = 0, boardID = 0;
+    char site[16], tester[16] ="", echoString[32], cFileName[128] = "configuration.txt";
+    unsigned int sbSize = 0, sub20Num = 0;
+    int boardID = 0;
 
     if(argc == 1)
     {
@@ -325,7 +326,7 @@ int main(int argc, char* argv[])
 
     if(interactive)
     {
-        uHTRPowerMezzMenu menu(config_lines,isV2,true);
+        uHTRPowerMezzMenu menu(config_lines,isV2,tester);
         for(int loops = 0;true;loops++)
         {
             if( !(loops % 100) ) 

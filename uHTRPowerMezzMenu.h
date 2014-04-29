@@ -26,7 +26,7 @@ class uHTRPowerMezzMenu
     };
 
     public:
-        uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses);
+        uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, const char tester[] = "");
         void display();
         void query_servers();
         void quit();

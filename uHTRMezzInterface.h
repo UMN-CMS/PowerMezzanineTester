@@ -26,7 +26,7 @@ public:
     const bool isV2_;
     const bool isRPi_;
     
-    uHTRMezzInterface(int idev = 0, bool v2 = true, bool isRPi = true, char host[] = "localhost", char port[]= "1338");
+    uHTRMezzInterface(int idev = 0, bool v2 = true, bool isRPi = true, const char host[] = "localhost", const char port[]= "1338");
     virtual ~uHTRMezzInterface();
     int setMUXChannel(const int, const int);
     virtual int readMezzMAC();

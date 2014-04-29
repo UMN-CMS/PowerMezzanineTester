@@ -12,7 +12,7 @@ extern std::string parseto(std::string &buff, std::string del = ",")
     return ret;
 }
 
-uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, bool ncurses)
+uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2,const char tstr[])
     : yinit_(0),xinit_(0)
 {
     //Handle signals
@@ -22,6 +22,8 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART; /* Restart functions if
                                  interrupted by handler */
+    sprintf(tester,"%s",tstr);
+
     for (std::map< int, std::string>::iterator it = config_lines.begin();
             it!= config_lines.end();
             it++)
@@ -280,7 +282,7 @@ void uHTRPowerMezzMenu::display()
             }
             else
             {
-                sprintf(response,"%s (is the board on?",retmessage);
+                sprintf(response,"%s (is the board on?)", retmessage);
                 fail = true;
                 attrset(COLOR_PAIR(3));
             }
@@ -414,7 +416,17 @@ int uHTRPowerMezzMenu::start_test()
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
                     if(strlen(tstr) != 0) 
+                    {
                         sprintf(tester,"%s",tstr);
+                    }
+                    else if (strlen(tester) == 0)
+                    {
+                        sprintf(buff,"Tester must be set to start test");
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        break;
+                    }
+
+                        
 
                     selected_board_->second.mezzanines->labelAll(tester,"Minnesota");
                     display();
@@ -436,18 +448,18 @@ int uHTRPowerMezzMenu::start_test()
                             sprintf(buff,"Failed to kill %d pid with SIGINT. Try SIGKILL? [y/N]", selected_board_->second.pid);
                             mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                             resp = readch();
-                            sprintf(buff,"                                ");
+                            sprintf(buff,"                                                     ");
                             mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                             if(resp != 'y') break;
                             if(kill(selected_board_->second.pid,SIGKILL))
                             {
-                                sprintf(buff,"Failed to kill %d pid with SIGKILL. You might need help. Attempting cleanup.", selected_board_->second.pid);
+                                sprintf(buff,"Failed to kill %d pid with SIGKILL. You might need help.", selected_board_->second.pid);
                                 mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                                selected_board_->second.mezzanines->setPrimaryLoad(false, false);
-                                selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
-                                selected_board_->second.mezzanines->setRun(false);
-                                selected_board_->second.s20->stopTest();
                             }
+                            selected_board_->second.mezzanines->setPrimaryLoad(false, false);
+                            selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
+                            selected_board_->second.mezzanines->setRun(false);
+                            selected_board_->second.s20->stopTest();
                         }
                 }
                 break;

@@ -37,7 +37,7 @@
 #define S20_GPIO_C18 0x40000
 #define S20_GPIO_C19 0x80000
 
-uHTRMezzInterface::uHTRMezzInterface(int idev, bool v2, bool isRPi, char host[], char port[]) : isV2_(v2), isRPi_(isRPi), openSuccessful_(false)
+uHTRMezzInterface::uHTRMezzInterface(int idev, bool v2, bool isRPi, const char host[], const char port[]) : isV2_(v2), isRPi_(isRPi), openSuccessful_(false)
 {
     //open communication interface
     com = 0;

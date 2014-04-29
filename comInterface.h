@@ -68,7 +68,7 @@ enum Mode
 class RPiInterface : public ComInterface
 {
 public:
-    RPiInterface(std::string host, std::string port);
+    RPiInterface(const std::string host, const std::string port);
     int i2c_write(int sa, char * buf, int sz);
     int i2c_read(int sa, char * buf, int sz);
     double read_adc(int chan);
