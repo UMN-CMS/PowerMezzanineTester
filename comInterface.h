@@ -69,6 +69,7 @@ class RPiInterface : public ComInterface
 {
 public:
     RPiInterface(const std::string host, const std::string port);
+    ~RPiInterface();
     int i2c_write(int sa, char * buf, int sz);
     int i2c_read(int sa, char * buf, int sz);
     double read_adc(int chan);

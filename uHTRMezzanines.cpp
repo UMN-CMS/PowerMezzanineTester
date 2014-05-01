@@ -985,7 +985,18 @@ unsigned int Mezzanines::monitor(bool passive)
         status |= (*iM)->monitor(passive);
     }
     return status;
+}
 
+bool Mezzanines::arePresent()
+{
+    bool status = 0;
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM)
+    {
+        status |= (*iM)->isPresent();
+    }
+    return status;
+    
 }
 void Mezzanines::setMargins(const int margin, const int l)
 {

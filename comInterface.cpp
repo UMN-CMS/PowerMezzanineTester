@@ -154,6 +154,14 @@ RPiInterface::RPiInterface(const std::string host, const std::string port)
 #endif
 }
 
+RPiInterface::~RPiInterface()
+{
+    delete[] io_service;
+    delete[] query;
+    delete[] s;
+}
+
+
 int RPiInterface::i2c_write(int sa, char * buf, int sz)
 {
 #ifdef URPI

@@ -82,6 +82,22 @@ extern std::string parse_to(std::string &buff, std::string del = ",")
     return ret;
 }
 
+//if interupt turn off loads and stop test
+void  INThandler(int sig)
+{
+    signal(sig, SIG_IGN);
+
+    io::printf("\n***************************************** \n");
+    io::printf(  "**** Turning off power to Mezzanines **** \n");
+    io::printf(  "***************************************** \n");
+    active_mezzanines->setPrimaryLoad(false, false);
+    active_mezzanines->setSecondaryLoad(false, false, false, false);
+    active_mezzanines->setRun(false);
+
+    //active_s20->stopTest();
+    exit(0);
+}
+
 int main(int argc, char* argv[])
 {
     int opt;
@@ -506,27 +522,25 @@ int main(int argc, char* argv[])
 
     if(runTest)
     {
+        //Handle Signal
+        struct sigaction sa;
+
+        sa.sa_handler = INThandler;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART; /* Restart functions if
+                                     interrupted by handler */
+        if (sigaction(SIGINT, &sa, NULL) == -1)
+        {
+            io::printf("handle this error?\n");
+        }
+
         s20.startTest(getpid());
         int retval = test_mezzanines(s20, mezzanines);
         char retmessage[32];
         Mezzanine::Summary::translateStatus(retval, retmessage);
         if(retval) io::printf("\nExit with value: %s\n", retmessage);
+        s20.stopTest();
     }
-}
-//if interupt turn off loads and stop test
-void  INThandler(int sig)
-{
-    signal(sig, SIG_IGN);
-
-    io::printf("\n***************************************** \n");
-    io::printf(  "**** Turning off power to Mezzanines **** \n");
-    io::printf(  "***************************************** \n");
-    active_mezzanines->setPrimaryLoad(false, false);
-    active_mezzanines->setSecondaryLoad(false, false, false, false);
-    active_mezzanines->setRun(false);
-
-    active_s20->stopTest();
-    exit(0);
 }
 
 //======================================================================
@@ -539,18 +553,6 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     int i, status;
     io::printf("Starting Mezzanine Tests...\n");
     if (mezzanines->empty()) return RETVAL_NO_MEZZ_SPEC;
-
-    //Handle Signal
-    struct sigaction sa;
-
-    sa.sa_handler = INThandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART; /* Restart functions if
-                                 interrupted by handler */
-    if (sigaction(SIGINT, &sa, NULL) == -1)
-    {
-        io::printf("handle this error?\n");
-    }
 
     int adChan = mezzanines->front()->get_adChan();
 
@@ -634,14 +636,18 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        io::printf(".");
+        //io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
+        char statusmessage[32];
+        Mezzanine::Summary::translateStatus(status, statusmessage);
+        io::printf("%s\n", statusmessage);
 
         if(!s20.isV2_ && (status & RETVAL_ABORT)) return RETVAL_ABORT;
 
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
+        if(!mezzanines->arePresent()) return RETVAL_NO_MODLE_DETECTED;
     }
     io::printf("\n");
     mezzanines->print();
@@ -659,14 +665,19 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        io::printf(".");
+        //io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
+
+        char statusmessage[32];
+        Mezzanine::Summary::translateStatus(status, statusmessage);
+        io::printf("%s\n", statusmessage);
 
         if(!s20.isV2_ && (status & RETVAL_ABORT)) return RETVAL_ABORT;
 
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
+        if(!mezzanines->arePresent()) return RETVAL_NO_MODLE_DETECTED;
     }
     io::printf("\n");
     mezzanines->print();
@@ -683,14 +694,19 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        io::printf(".");
+        //io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
+        char statusmessage[32];
+        Mezzanine::Summary::translateStatus(status, statusmessage);
+        io::printf("%s\n", statusmessage);
 
         if(!s20.isV2_ && (status & RETVAL_ABORT)) return RETVAL_ABORT;
 
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
+
+        if(!mezzanines->arePresent()) return RETVAL_NO_MODLE_DETECTED;
     }
     io::printf("\n");
     mezzanines->print();
@@ -712,14 +728,19 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     {
         boost::thread timer(boost::bind(sleep, 10));
         status = 0;
-        io::printf(".");
+        //io::printf(".");
         fflush(stdout);
         status |= mezzanines->monitor();
+        char statusmessage[32];
+        Mezzanine::Summary::translateStatus(status, statusmessage);
+        io::printf("%s\n", statusmessage);
 
         if(!s20.isV2_ && (status & RETVAL_ABORT)) return RETVAL_ABORT;
 
         // SLEEP 10 seconds.
         if(will_sleep) timer.join();
+
+        if(!mezzanines->arePresent()) return RETVAL_NO_MODLE_DETECTED;
     }
     io::printf("\n");
     mezzanines->print();

@@ -194,6 +194,7 @@ class Mezzanines : public std::vector<Mezzanine*>
         bool labelAll(const std::string tester, const std::string site);
         void readEeprom();
 
+        bool arePresent();
         int init();
 
         void print();

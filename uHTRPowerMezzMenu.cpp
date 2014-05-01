@@ -199,7 +199,8 @@ void uHTRPowerMezzMenu::draw_star()
 void uHTRPowerMezzMenu::display()
 {
 
-    erase();
+
+    char buff[256];
     char header1[256];
     char header2[256];
     char header3[256];
@@ -207,6 +208,10 @@ void uHTRPowerMezzMenu::display()
     int x = xinit_+1 , y = 4 + yinit_;
 
     attrset(COLOR_PAIR(1));
+
+    sprintf(buff,"Reading...");
+    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+    refresh();  
 
 
     // 0         1         2         3         4         5         6         7         8         9         10        11        12        13
@@ -223,7 +228,7 @@ void uHTRPowerMezzMenu::display()
     mvaddstr(yinit_+2,xinit_+1,header2);
     mvaddstr(yinit_+3,xinit_+1,header3);
 
-    char buff[256];
+
 
     for(std::map<int,Board>::iterator board = boards_.begin();
             board != boards_.end();
@@ -248,13 +253,13 @@ void uHTRPowerMezzMenu::display()
         bool fail = false;
         if (b->isConnected)
         {
-            int retval = check_voltages(b->id);
-            char retmessage[32];
-            Mezzanine::Summary::translateStatus(retval, retmessage);
-
-            if(retval == RETVAL_SUCCESS)
+            if(b->pid != 0)
             {
-                if(b->pid != 0)
+                int retval = check_voltages(b->id);
+                char retmessage[32];
+                Mezzanine::Summary::translateStatus(retval, retmessage);
+
+                if(retval == RETVAL_SUCCESS)
                 {
                     b->mezzanines->monitor(true);
                     Mezzanines::iterator iM = b->mezzanines->begin();
@@ -274,17 +279,17 @@ void uHTRPowerMezzMenu::display()
                 }
                 else
                 {
-                    sprintf(response,"No active test");
+                    sprintf(response,"%s (is the board on?)", retmessage);
                     fail = true;
-                    b->ready = true;
-                    attrset(COLOR_PAIR(2));
+                    attrset(COLOR_PAIR(3));
                 }
             }
             else
             {
-                sprintf(response,"%s (is the board on?)", retmessage);
+                sprintf(response,"No active test");
                 fail = true;
-                attrset(COLOR_PAIR(3));
+                b->ready = true;
+                attrset(COLOR_PAIR(2));
             }
         }
         else
@@ -303,6 +308,9 @@ void uHTRPowerMezzMenu::display()
         x=1+xinit_;
 
     }
+
+    sprintf(buff,"           ");
+    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 }
 
 void uHTRPowerMezzMenu::query_servers()
@@ -368,6 +376,7 @@ int uHTRPowerMezzMenu::start_test()
 {
 
     int key_code;
+    char resp;
     if(( key_code = getch()) == ERR)
     {
         return 0;
@@ -397,22 +406,35 @@ int uHTRPowerMezzMenu::start_test()
                 return -1;
                 break;
             case 's':
-                if(!selected_board_->second.ready) break;
+                if(selected_board_->second.pid != 0 ) break;
+
                 sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
                 mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                {
-                    char resp = readch();
-                    sprintf(buff,"                                ");
-                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                resp = readch();
+                sprintf(buff,"                                ");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
-                    if(resp != 'y') break;
+                if(resp != 'y') break;
+
+                {
+                    int ret[2];
+                    selected_board_->second.s20->readTest(ret);
+                    selected_board_->second.pid = ret[1];
+                    selected_board_->second.time = ret[0];
+
+                    if( selected_board_->second.pid != 0 )
+                    {
+                        sprintf(buff,"Test already started on Board %d:",selected_board_->first);
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        break;
+                    }
 
                     sprintf(buff,"Enter name[%s]:",tester);
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
                     char tstr[64];
                     readstr(tstr);
-                    sprintf(buff,"                                ");
+                    sprintf(buff,"                                     ");
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
                     if(strlen(tstr) != 0) 
@@ -426,43 +448,120 @@ int uHTRPowerMezzMenu::start_test()
                         break;
                     }
 
-                        
+
 
                     selected_board_->second.mezzanines->labelAll(tester,"Minnesota");
-                    display();
+
                     pid_t pid = fork();
                     if(pid == 0) return selected_board_->first;
                 }
                 break;
             case 'k':
-                sprintf(buff,"Kill test on board %d [y,N]:    ",selected_board_->first);
-                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                //Check if Process exists
+                //if not ask to cleanup board
+                if(selected_board_->second.pid == 0) break;
+                if(kill(selected_board_->second.pid,0))
                 {
-                    char resp = readch();
-                    sprintf(buff,"                                ");
+                    sprintf(buff,"PID %d not found. Cleanup? [Y/n]",selected_board_->second.pid);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                    resp = readch();
+                    sprintf(buff,"                                   ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                    if(resp == KEY_ENTER || resp == 'y') 
+                    {
+                        selected_board_->second.mezzanines->setPrimaryLoad(false, false);
+                        selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
+                        selected_board_->second.mezzanines->setRun(false);
+                        selected_board_->second.s20->stopTest();
+                    }
+                }
+                else 
+                {
+                    sprintf(buff,"Kill test on board %d (pid %d) [y,N]:",selected_board_->first,selected_board_->second.pid);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                    resp = readch();
+                    sprintf(buff,"                                       ");
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                     if(resp != 'y') break;
-                    if (selected_board_->second.isConnected && selected_board_->second.pid != 0)
-                        if(kill(selected_board_->second.pid,SIGINT))
+
+                    if (kill(selected_board_->second.pid,SIGINT))
+                    {
+
+                        sprintf(buff,"Failed to kill %d pid with SIGINT. Force test to stop? [y/N]", selected_board_->second.pid);
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        resp = readch();
+                        sprintf(buff,"                                                                ");
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        if(resp != 'y') break;
+
+                        if(kill(selected_board_->second.pid,SIGKILL))
                         {
-                            sprintf(buff,"Failed to kill %d pid with SIGINT. Try SIGKILL? [y/N]", selected_board_->second.pid);
+                            sprintf(buff,"Failed to kill %d pid with SIGKILL. You might need help.", selected_board_->second.pid);
                             mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                            resp = readch();
-                            sprintf(buff,"                                                     ");
-                            mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                            if(resp != 'y') break;
-                            if(kill(selected_board_->second.pid,SIGKILL))
-                            {
-                                sprintf(buff,"Failed to kill %d pid with SIGKILL. You might need help.", selected_board_->second.pid);
-                                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                            }
-                            selected_board_->second.mezzanines->setPrimaryLoad(false, false);
-                            selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
-                            selected_board_->second.mezzanines->setRun(false);
-                            selected_board_->second.s20->stopTest();
                         }
+                        selected_board_->second.mezzanines->setPrimaryLoad(false, false);
+                        selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
+                        selected_board_->second.mezzanines->setRun(false);
+                    }
+                    selected_board_->second.s20->stopTest();
                 }
                 break;
+            case 'd':
+                selected_board_->second.mezzanines->setPrimaryLoad(false, false);
+                selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
+                selected_board_->second.mezzanines->setRun(false);
+                break;
+            case 'g':
+                sprintf(buff,"Start test on all idle boards[y,N]:");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                resp = readch();
+                sprintf(buff,"                                ");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                if(resp != 'y') break;
+
+                {
+
+                    sprintf(buff,"Enter name[%s]:",tester);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    char tstr[64];
+                    readstr(tstr);
+                    sprintf(buff,"                                     ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    if(strlen(tstr) != 0) 
+                    {
+                        sprintf(tester,"%s",tstr);
+                    }
+                    else if (strlen(tester) == 0)
+                    {
+                        sprintf(buff,"Tester must be set to start test");
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        break;
+                    }
+
+                    query_servers();
+
+                    for(std::map<int,Board>::iterator board = boards_.begin();
+                            board != boards_.end();
+                            board++)
+                    {
+                        if(board->second.pid != 0 || !board->second.isConnected) continue;
+
+                        board->second.mezzanines->labelAll(tester,"Minnesota");
+                        pid_t pid = fork();
+                        if(pid == 0) return board->first;
+                    }
+                }
+                break;
+
+            case 'r':
+                io::set_wait(true);
+                selected_board_->second.mezzanines->readEeprom();
+                io::set_wait(false);
+                break;
+
             default:
                 break;
         }
