@@ -146,7 +146,7 @@ RPiInterface::RPiInterface(const std::string host, const std::string port)
     bbChan_ = -1;
 
     tcp::resolver resolver(*io_service);
-    query = new tcp::resolver::query(tcp::v4(), host, port);
+    query = new tcp::resolver::query(tcp::v4(), host, port, boost::asio::ip::resolver_query_base::numeric_service);
     iterator = resolver.resolve(*query);
 
 #else
