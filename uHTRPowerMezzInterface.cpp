@@ -274,7 +274,7 @@ void uHTRPowerMezzInterface::setMarginControl(const bool m0, const bool m1, cons
 //     return;
 // }
 
-void uHTRPowerMezzInterface::readMarginPGood(bool* margup, bool* margdn, bool* pgood)
+void uHTRPowerMezzInterface::readMarginPGood(bool* margup, bool* margdn, bool* pgood, bool* run)
 {
     if(!openSuccessful_) return;
 
@@ -282,6 +282,7 @@ void uHTRPowerMezzInterface::readMarginPGood(bool* margup, bool* margdn, bool* p
     com->i2c_write(I2C_SADDRESS_MARGCTRL, (char*)buff_, 1);  //set register
     com->i2c_read(I2C_SADDRESS_MARGCTRL, (char*)buff_, 1);  //read input register
 
+    if(run) *run    = I2C_MARGCTRL_OUTPUT_C0 & buff_[0];
     *margup = I2C_MARGCTRL_OUTPUT_C2 & buff_[0];
     *margdn = I2C_MARGCTRL_OUTPUT_C3 & buff_[0];
     *pgood  = I2C_MARGCTRL_OUTPUT_C7 & buff_[0];
@@ -326,7 +327,7 @@ void uHTRPowerMezzInterface::togglePowerMezzs(const bool state)
     else
     {
         //int ib;
-        //com->gpio_write(state?S20_GPIO_C12:0, &ib, S20_GPIO_C12); //sets power mezzaniens on if state is true
+        //com->gpio_write(state?S20_GPIO_C12:0, &ib, S20_GPIO_C12); //sets power mezzanines on if state is true
     }
 
     errval_ = com->getError();

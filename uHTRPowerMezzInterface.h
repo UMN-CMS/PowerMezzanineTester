@@ -30,7 +30,7 @@ public:
     void configMarginControl();
     void setMarginControl(const bool, const bool, const bool, const bool);
     //void releaseMarginControl();
-    void readMarginPGood(bool*, bool*, bool*);
+    void readMarginPGood(bool*, bool*, bool*, bool* = 0);
     void togglePowerMezzs(const bool); 
     void toggleMezzsLoad(const int, const bool); 
     void writeMezzEeprom(const EEPROM_data);
