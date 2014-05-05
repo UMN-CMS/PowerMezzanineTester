@@ -538,7 +538,16 @@ int main(int argc, char* argv[])
         int retval = test_mezzanines(s20, mezzanines);
         char retmessage[32];
         Mezzanine::Summary::translateStatus(retval, retmessage);
-        if(retval) io::printf("\nExit with value: %s\n", retmessage);
+        if(retval)
+        {
+            io::printf("\nExit with value: %s\n", retmessage);
+        }
+
+        //Make sure everything is off again
+        mezzanines->setRun(false);
+        mezzanines->setPrimaryLoad(false, false);
+        mezzanines->setSecondaryLoad(false, false, false, false);
+
         s20.stopTest();
     }
 }
