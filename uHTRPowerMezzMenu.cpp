@@ -100,9 +100,9 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
                 }
             }
         }
-        b.ready = false;
         b.pid = 0;
         b.time = 0;
+        b.voltage = 0;
         boards_[b.id] = b;
     
     }
@@ -125,60 +125,66 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     io::enable_curses(yinit_ + 7 + boards_.size(), LINES - 2 ,xinit_ + 2);
 }
 
-int uHTRPowerMezzMenu::check_voltages(int id)
+void uHTRPowerMezzMenu::check_voltages()
 {
-    uHTRPowerMezzInterface * s20 = boards_[id].s20;
-
-    if(s20->isV2_)
+    for(std::map<int,Board>::iterator board = boards_.begin();
+            board != boards_.end();
+            ++board)
     {
-        // Read voltage from sub20 board
+        uHTRPowerMezzInterface * s20 = board->second.s20;
+        board->second.voltage = 0;
 
-        if(s20->isRPi_)
+        if(s20->isV2_)
         {
-            // 12 V supply is read through a divide by 9.2
-            //
-            if(9.2 * s20->readSUB20ADC(7 - 2*(boards_[id].adChan - 1)) < 10.0) return RETVAL_BAD_SUPPLY_VOLTAGE;
+            // Read voltage from sub20 board
 
-            // 5 V supply is read through a dividr by 3.7
-            if(3.7 * s20->readSUB20ADC(6 - 2*(boards_[id].adChan - 1)) < 4.5) return RETVAL_BAD_3_3VOLT;
+            if(s20->isRPi_)
+            {
+                // 12 V supply is read through a divide by 9.2
+                //
+                if(9.2 * s20->readSUB20ADC(7 - 2*(board->second.adChan - 1)) < 10.0) board->second.voltage |= RETVAL_BAD_SUPPLY_VOLTAGE;
 
+                // 5 V supply is read through a dividr by 3.7
+                if(3.7 * s20->readSUB20ADC(6 - 2*(board->second.adChan - 1)) < 4.5) board->second.voltage |= RETVAL_BAD_3_3VOLT;
+
+            }
+            else
+            {
+                // 12 V supply is read through a divide by 9.2
+                if(9.2 * s20->readSUB20ADC(6) < 10.0) board->second.voltage |= RETVAL_BAD_SUPPLY_VOLTAGE;
+
+                // 5 V supply is read through a dividr by 3.7
+                if(3.7 * s20->readSUB20ADC(7) < 4.5) board->second.voltage |= RETVAL_BAD_3_3VOLT;
+            }
         }
         else
         {
-            // 12 V supply is read through a divide by 9.2
-            if(9.2 * s20->readSUB20ADC(6) < 10.0) return RETVAL_BAD_SUPPLY_VOLTAGE;
+            //--------------------------------------------------------------------
+            // Set MUX to channel 1, AUX_POWER MODULE
+            //--------------------------------------------------------------------
+            // PCA9544A; SLAVE ADDRESS: 1110 000
+            s20->setMUXChannel(MUX_AUXPOWERMOD, -1);
 
-            // 5 V supply is read through a dividr by 3.7
-            if(3.7 * s20->readSUB20ADC(7) < 4.5) return RETVAL_BAD_3_3VOLT;
+            //--------------------------------------------------------------------
+            // Read 12V supply voltage. If 12V supply reads less than 8V then 
+            // exit with a failure.
+            //--------------------------------------------------------------------
+            // MCP3428; SLAVE ADDRESS: 1101 010
+            // Channel 3: V12 = 18.647 * V_CH3
+            // 2.048V reference -> 1 mV per LSB
+            if(18.647 * s20->readMezzADC(ADC_28, 3) < 10000.0) board->second.voltage |= RETVAL_BAD_SUPPLY_VOLTAGE;
+
+            //--------------------------------------------------------------------
+            // Read 3.3V supply voltage. If 3.3V supply reads less than 3V then 
+            // exit with a failure.
+            //--------------------------------------------------------------------
+            // MCP3428; SLAVE ADDRESS: 1101 010
+            // Channel 4: V3.3 = 18.647 * V_CH4
+            // 2.048V reference -> 1 mV per LSB
+            if(18.647 * s20->readMezzADC(ADC_28, 4) < 3000.0) board->second.voltage |= RETVAL_BAD_3_3VOLT;
         }
+        board->second.voltage |= RETVAL_SUCCESS;
     }
-    else
-    {
-        //--------------------------------------------------------------------
-        // Set MUX to channel 1, AUX_POWER MODULE
-        //--------------------------------------------------------------------
-        // PCA9544A; SLAVE ADDRESS: 1110 000
-        s20->setMUXChannel(MUX_AUXPOWERMOD, -1);
-
-        //--------------------------------------------------------------------
-        // Read 12V supply voltage. If 12V supply reads less than 8V then 
-        // exit with a failure.
-        //--------------------------------------------------------------------
-        // MCP3428; SLAVE ADDRESS: 1101 010
-        // Channel 3: V12 = 18.647 * V_CH3
-        // 2.048V reference -> 1 mV per LSB
-        if(18.647 * s20->readMezzADC(ADC_28, 3) < 10000.0) return RETVAL_BAD_SUPPLY_VOLTAGE;
-
-        //--------------------------------------------------------------------
-        // Read 3.3V supply voltage. If 3.3V supply reads less than 3V then 
-        // exit with a failure.
-        //--------------------------------------------------------------------
-        // MCP3428; SLAVE ADDRESS: 1101 010
-        // Channel 4: V3.3 = 18.647 * V_CH4
-        // 2.048V reference -> 1 mV per LSB
-        if(18.647 * s20->readMezzADC(ADC_28, 4) < 3000.0) return RETVAL_BAD_3_3VOLT;
-    }
-    return RETVAL_SUCCESS;
 }
 
 void uHTRPowerMezzMenu::draw_star()
@@ -198,6 +204,7 @@ void uHTRPowerMezzMenu::draw_star()
 }
 void uHTRPowerMezzMenu::display()
 {
+    check_voltages();
 
 
     char buff[256];
@@ -255,11 +262,10 @@ void uHTRPowerMezzMenu::display()
         {
             if(b->pid != 0)
             {
-                int retval = check_voltages(b->id);
                 char retmessage[32];
-                Mezzanine::Summary::translateStatus(retval, retmessage);
+                Mezzanine::Summary::translateStatus(b->voltage, retmessage);
 
-                if(retval == RETVAL_SUCCESS)
+                if(b->voltage == RETVAL_SUCCESS)
                 {
                     b->mezzanines->monitor(true);
                     Mezzanines::iterator iM = b->mezzanines->begin();
@@ -288,7 +294,6 @@ void uHTRPowerMezzMenu::display()
             {
                 sprintf(response,"No active test");
                 fail = true;
-                b->ready = true;
                 attrset(COLOR_PAIR(2));
             }
         }
@@ -333,7 +338,6 @@ void uHTRPowerMezzMenu::query_servers()
         {
             b->pid = 0;
             b->time = 0;
-            b->ready = false;
         }
     }
 }
@@ -521,7 +525,6 @@ int uHTRPowerMezzMenu::start_test()
                 if(resp != 'y') break;
 
                 {
-
                     sprintf(buff,"Enter name[%s]:",tester);
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
@@ -561,6 +564,87 @@ int uHTRPowerMezzMenu::start_test()
                 selected_board_->second.mezzanines->readEeprom();
                 io::set_wait(false);
                 break;
+            case 'w':
+                {
+                    sprintf(buff,"Enter name[%s]:",tester);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    char tstr[64];
+                    readstr(tstr);
+                    sprintf(buff,"                                     ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    if(strlen(tstr) != 0) 
+                    {
+                        sprintf(tester,"%s",tstr);
+                    }
+                    else if (strlen(tester) == 0)
+                    {
+                        sprintf(buff,"Tester must be set to start test");
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        break;
+                    }
+
+                    selected_board_->second.mezzanines->labelAll(tester,"Minnesota");
+                }
+                break;
+
+            case 'p':
+                sprintf(buff,"Program all idle boards[y,N]:");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                resp = readch();
+                sprintf(buff,"                                ");
+                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                if(resp != 'y') break;
+
+                {
+                    sprintf(buff,"Enter name[%s]:",tester);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    char tstr[64];
+                    readstr(tstr);
+                    sprintf(buff,"                                     ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    if(strlen(tstr) != 0) 
+                    {
+                        sprintf(tester,"%s",tstr);
+                    }
+                    else if (strlen(tester) == 0)
+                    {
+                        sprintf(buff,"Tester must be set to start test");
+                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                        break;
+                    }
+
+                    query_servers();
+
+                    for(std::map<int,Board>::iterator board = boards_.begin();
+                            board != boards_.end();
+                            board++)
+                    {
+                        if(board->second.pid != 0 || !board->second.isConnected) continue;
+
+                        board->second.mezzanines->labelAll(tester,"Minnesota");
+                    }
+                }
+                break;
+
+            case '?':
+                io::set_wait(true);
+
+                io::printf("**************Controls*****************");
+                io::printf("'Up/Down' - Change selected board");
+                io::printf("'s' - Start Test on selected board");
+                io::printf("'k' - Kill Test on selected board");
+                io::printf("'d' - Disable selected board");
+                io::printf("'r' - Read EEPROM on selected board");
+                io::printf("'w' - Write EEPROM on selected board");
+                io::printf("'g' - Start all idle boards (Go)");
+                io::printf("'p' - Program EEPROM on all idle boards");
+                io::printf("'q' - Quit");
+
+                io::set_wait(false);
 
             default:
                 break;

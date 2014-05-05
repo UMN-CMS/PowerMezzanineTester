@@ -16,7 +16,7 @@ class uHTRPowerMezzMenu
         int pid;
         int time;
         bool isConnected;
-        bool ready;
+        int voltage;
         char adapter[4];
         char hostname[32];
         char port[8];
@@ -33,7 +33,7 @@ class uHTRPowerMezzMenu
         int start_test();
 
     private:
-        int check_voltages(int i);
+        void check_voltages();
         void draw_star();
         char readch();
         void readstr(char str[]);
