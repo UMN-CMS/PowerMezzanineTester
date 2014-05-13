@@ -24,7 +24,7 @@ int N_margup = 0; //30 min
 int N_margdn = 0; //30 min
 int N_nom    = 57600; //160 hours 
 int N_nom_lh = 0; //19 hours 
-const bool will_sleep = false;
+const bool will_sleep = true;
 
 double PM_VOUT_NOM = 1.0;
 const double PM_VA_NOM = 12.0;
