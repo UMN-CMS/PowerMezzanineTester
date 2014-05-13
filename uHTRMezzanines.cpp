@@ -82,6 +82,14 @@ void Mezzanine::setRun(const bool run)
     s20.togglePowerMezzs(run);
 }
 
+void Mezzanine::disableMezzanine()
+{
+    // PCA9544A; SLAVE ADDRESS: 1110 000
+    s20.setMUXChannel(muxAddr, aMuxAddr);
+
+    s20.disableMezz();
+}
+
 void Mezzanine::readEeprom()
 {
     // PCA9544A; SLAVE ADDRESS: 1110 000
@@ -118,22 +126,26 @@ void Mezzanine::readEeprom()
         s20.printMezzMAC();
         uHTRPowerMezzInterface::EEPROM_data t_data;
         s20.readMezzEeprom(&t_data);
-        s20.printEEPROM_data(t_data, false);
+
+	//deactivate power mezzanines
+	setRun(false);
+
+	s20.printEEPROM_data(t_data, false);
         io::printf("\n");
     }
     else
     {
         if(isPM) io::printf("No Power Mezzanine %s Detected.\n", slot);
         else io::printf("No Aux Power Mezzanine %s Detected.\n", slot);
-	if(s20.isRPi_)
-	{
-	    s20.printMezzMAC();
-	}
-    io::printf("\n");
-    }
+	//if(s20.isRPi_)
+	//{
+	//s20.printMezzMAC();
+	//}
+	//deactivate power mezzanines
+	setRun(false);
 
-    //deactivate power mezzanines
-    setRun(false);
+	io::printf("\n");
+    }
 }
 
 void Mezzanine::loadSSNFile(const unsigned int skipBlockSize)
@@ -1037,6 +1049,16 @@ void Mezzanines::setSecondaryLoad(const bool l1, const bool l2, const bool l3, c
         boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         if(!(*iM)->isPM) (*iM)->setSecondaryLoad(l1,l2,l3,l4);
+    }
+}
+
+void Mezzanines::disableMezzanines()
+{
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM)
+    {
+        boost::mutex::scoped_lock l(*s20mtx_);
+        (*iM)->disableMezzanine();
     }
 }
 

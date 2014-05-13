@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
 
     if(interactive)
     {
-	char responce;
+	char responce = '\0';
         uHTRPowerMezzMenu menu(config_lines,isV2,tester);
         for(int loops = 0;true;loops++)
         {
@@ -510,9 +510,7 @@ int main(int argc, char* argv[])
 
     if(disable)
     {
-        mezzanines->setPrimaryLoad(false, false);
-        mezzanines->setSecondaryLoad(false, false, false, false);
-        mezzanines->setRun(false);
+        mezzanines->disableMezzanines();
     }
 
     if(readEeproms)
@@ -772,11 +770,12 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     // End of test cleanup
 
     // Turn power mezzanines off
-    mezzanines->setRun(false);
+    //mezzanines->setRun(false);
+    mezzanines->disableMezzanines();
 
     // Deactivate nominal load resistors 
-    mezzanines->setPrimaryLoad(false, false);
-    mezzanines->setSecondaryLoad(false, false, false, false);
+    //mezzanines->setPrimaryLoad(false, false);
+    //mezzanines->setSecondaryLoad(false, false, false, false);
 
     display.~thread();
 

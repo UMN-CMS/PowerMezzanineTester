@@ -381,6 +381,28 @@ void uHTRPowerMezzInterface::toggleMezzsLoad(const int channel, const bool state
     return;
 }
 
+void uHTRPowerMezzInterface::disableMezz()
+{
+    if(!openSuccessful_) return;
+
+    if(isV2_)
+    {
+        // Set output value
+        buff_[0] = I2C_MARGCTRL_OUTPUT_REG;  //register address byte
+        buff_[1] = 0x00;  //all outputs low
+        com->i2c_write(V2_I2C_SADDRESS_PMBASE_GPIO, (char*)buff_, 2);  //set all output 0
+    }
+    else
+    {
+        // This feature does not exist on V1 boards
+    }
+
+    errval_ = com->getError();
+
+    return;
+    
+}
+
 void uHTRPowerMezzInterface::writeMezzEeprom(const EEPROM_data data)
 {
     if(!openSuccessful_) return;

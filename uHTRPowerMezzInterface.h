@@ -33,6 +33,7 @@ public:
     void readMarginPGood(bool*, bool*, bool*, bool* = 0);
     void togglePowerMezzs(const bool); 
     void toggleMezzsLoad(const int, const bool); 
+    void disableMezz();
     void writeMezzEeprom(const EEPROM_data);
     void readMezzEeprom(EEPROM_data*);
     void printEEPROM_data(const EEPROM_data, const bool);

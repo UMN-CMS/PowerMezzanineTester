@@ -514,9 +514,7 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 //break;
 		// Purposeful flowthrough to 'd' DO NOT place anything between 'k' and 'd'
             case 'd':
-                selected_board_->second.mezzanines->setPrimaryLoad(false, false);
-                selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
-                selected_board_->second.mezzanines->setRun(false);
+                selected_board_->second.mezzanines->disableMezzanines();
                 break;
             case 'g':
                 /*sprintf(buff,"Start test on all idle boards[y,N]:");
@@ -593,7 +591,7 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 break;
 
             case 'p':
-                sprintf(buff,"Program all idle boards[y,N]:");
+                /*sprintf(buff,"Program all idle boards[y,N]:");
                 mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                 resp = readch();
                 sprintf(buff,"                                ");
@@ -630,7 +628,7 @@ int uHTRPowerMezzMenu::start_test(char *responce)
 
                         board->second.mezzanines->labelAll(tester,"Minnesota");
                     }
-                }
+		    }*/
                 break;
 
             case '?':

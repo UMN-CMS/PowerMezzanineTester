@@ -136,6 +136,7 @@ public:
     virtual void setRun(const bool run);
     virtual void setPrimaryLoad(const bool p, const bool s) = 0;
     virtual void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4){ }
+    virtual void disableMezzanine();
     virtual bool programEeprom(const std::string tester, const std::string site) = 0;
     virtual void readEeprom();
     virtual bool isPresent()
@@ -189,6 +190,7 @@ class Mezzanines : public std::vector<Mezzanine*>
         void setRun(const bool run);
         void setPrimaryLoad(const bool p, const bool s);
         void setSecondaryLoad(const bool l1, const bool l2, const bool l3, const bool l4);
+	void disableMezzanines();
         bool labelPM(const std::string tester, const std::string site);
         bool labelAPM(const std::string tester, const std::string site);
         bool labelAll(const std::string tester, const std::string site);
