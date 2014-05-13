@@ -30,7 +30,7 @@ class uHTRPowerMezzMenu
         void display();
         void query_servers();
         void quit();
-        int start_test();
+        int start_test(char *responce = 0);
 
     private:
         void check_voltages();

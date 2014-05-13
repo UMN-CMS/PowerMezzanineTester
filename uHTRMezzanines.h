@@ -11,9 +11,9 @@
 #include "uHTRPowerMezzInterface.h"
 
 // Software Version 
-const static unsigned int uPMTV_MAJOR = 1;
+const static unsigned int uPMTV_MAJOR = 2;
 const static unsigned int uPMTV_MINOR = 0;
-const static unsigned int uPMTV_PATCH = 2;
+const static unsigned int uPMTV_PATCH = 0;
 
 const double APM_VA_VB_NOM = 1.2;
 const double APM_VC_VD_NOM = 1.0;

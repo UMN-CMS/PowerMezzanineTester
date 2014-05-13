@@ -20,10 +20,10 @@
 
 const int TimeToN = 6;
 
-int N_margup = 180; //30 min
-int N_margdn = 180; //30 min
-int N_nom    = 6840; //19 hours 
-int N_nom_lh = 6840; //19 hours 
+int N_margup = 0; //30 min
+int N_margdn = 0; //30 min
+int N_nom    = 57600; //160 hours 
+int N_nom_lh = 0; //19 hours 
 const bool will_sleep = true;
 
 double PM_VOUT_NOM = 1.0;
@@ -342,6 +342,7 @@ int main(int argc, char* argv[])
 
     if(interactive)
     {
+	char responce;
         uHTRPowerMezzMenu menu(config_lines,isV2,tester);
         for(int loops = 0;true;loops++)
         {
@@ -352,7 +353,7 @@ int main(int argc, char* argv[])
                 loops = 0;
             }
 
-            boardID = menu.start_test();
+            boardID = menu.start_test(&responce);
             if(boardID == 0) 
             {
                 usleep(100000);
@@ -360,6 +361,20 @@ int main(int argc, char* argv[])
             }
             else if(boardID == -1) menu.quit();
 
+	    if(responce == 's')
+	    {
+		N_margup = 180; //30 min
+		N_margdn = 180; //30 min
+		N_nom    = 180; //30 min
+		N_nom_lh = 180; //30 min
+	    }
+	    else if(responce == 't')
+	    {
+		N_margup = 0; //0 min
+		N_margdn = 0; //0 min
+		N_nom    = 57600; //160 hours 
+		N_nom_lh = 0; //0 min
+	    }
             runTest = true;
 
             io::disable_curses();
@@ -543,10 +558,10 @@ int main(int argc, char* argv[])
             io::printf("\nExit with value: %s\n", retmessage);
         }
 
-        //Make sure everything is off again
-        mezzanines->setRun(false);
-        mezzanines->setPrimaryLoad(false, false);
-        mezzanines->setSecondaryLoad(false, false, false, false);
+        ////Make sure everything is off again
+        //mezzanines->setRun(false);
+        //mezzanines->setPrimaryLoad(false, false);
+        //mezzanines->setSecondaryLoad(false, false, false, false);
 
         s20.stopTest();
     }

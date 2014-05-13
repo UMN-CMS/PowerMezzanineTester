@@ -252,7 +252,7 @@ unsigned int PM::monitor(bool passive)
         {
             char fname[128];
             sprintf(fname, "PowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
-            f_detail = fopen(fname, "w");
+            f_detail = fopen(fname, "a");
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_A", "V_A", "I_B", "V_B", "Total Power");
         }
 
@@ -463,7 +463,7 @@ unsigned int APM::monitor(bool passive)
         {
             char fname[128];
             sprintf(fname, "AuxPowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
-            f_detail = fopen(fname, "w");
+            f_detail = fopen(fname, "a");
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_C", "V_C", "VADJ_A", "VADJ_B", "VADJ_C", "VADJ_D", "Total Power");
         }
 
@@ -786,7 +786,7 @@ bool APM::programEeprom(std::string tester, std::string site)
         data.data_format_version = 0x01;
         data.mezz_type_code = 0x02;
         mezzLabel ml = (mezzLabel)900;
-        if(VOUT_NOM > 1.79 && VOUT_NOM < 1.81)
+        if(VOUT_NOM > 1.59 && VOUT_NOM < 1.81)
         {
             data.mezz_subtype_code = 0x01;
             sprintf((char*)data.mezz_type, "APM1.8");
