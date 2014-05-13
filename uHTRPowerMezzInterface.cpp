@@ -410,6 +410,18 @@ void uHTRPowerMezzInterface::readMezzEeprom(EEPROM_data* data)
     com->i2c_write(I2C_SADDRESS_EEPROM, (char*)buff_, 1);  // Set address of initial read
     com->i2c_read(I2C_SADDRESS_EEPROM, (char*)data, EEPROM_DATA_SIZE);  // Set address of initial read
 
+    // saftey to ensure length strings are null terminated 
+    int length = sizeof(data->mezz_type)/sizeof(uint8_t);
+    data->mezz_type[length - 1] = 0;
+    length = sizeof(data->manu_date)/sizeof(uint8_t);
+    data->manu_date[length - 1] = 0;
+    length = sizeof(data->manu_site)/sizeof(uint8_t);
+    data->manu_site[length - 1] = 0;
+    length = sizeof(data->manu_tester)/sizeof(uint8_t);
+    data->manu_tester[length - 1] = 0;
+    length = sizeof(data->test_release)/sizeof(uint8_t);
+    data->test_release[length - 1] = 0;
+
     errval_ = com->getError();
 
     return;
@@ -417,7 +429,7 @@ void uHTRPowerMezzInterface::readMezzEeprom(EEPROM_data* data)
 
 void uHTRPowerMezzInterface::printEEPROM_data(const EEPROM_data data, const bool hex)
 {
-    if(hex)
+   if(hex)
     {
         for(unsigned int i = 0; i < EEPROM_DATA_SIZE; i++)
         {
