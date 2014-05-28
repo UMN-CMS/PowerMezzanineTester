@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     bool runTest = false, labelPM = false, labelAPM = false, readEeproms = false, siteSet = false, testerSet = false;
     bool echo = false, k = false, isV2 = true, pSet = false, aSet = false, enable = false, disable = false;
     bool interactive = false;
-    char site[16], tester[16] ="", echoString[32], cFileName[128] = "configuration.txt";
+    char site[16], tester[16] ="", echoString[32], cFileName[128] = "/home/daq/hcalUHTR/tool/moduleCheckSUB20/configuration.txt";
     unsigned int sbSize = 0, sub20Num = 0;
     int boardID = 0;
 
