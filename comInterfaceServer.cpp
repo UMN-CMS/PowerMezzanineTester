@@ -19,15 +19,19 @@ void RPiInterfaceServer::lcd_write(char * buf, int sz)
 int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    i2c.setAddress(sa);
-    i2c.send((unsigned char *)buf, sz);
+    int i = 0;
+    do
+    {
+        i2c.setAddress(sa);
+        i2c.send((unsigned char *)buf, sz);
 
-    errno_ = i2c.fail();
+        errno_ = i2c.fail();
+    } while (errno_ && ++i < 10 )
 
-    //printf("w: %02x: %d: ", sa,errno_);
-    //for(int i =0; i < sz; i++)
-    //    printf("%02x ", buf[i]);
-    //printf("\n");
+    printf("w: %02x: %d: ", sa,errno_);
+    for(int i =0; i < sz; i++)
+        printf("%02x ", buf[i]);
+    printf("\n");
     return errno_;//i2c.fail();
 #else
     return 0;
@@ -37,15 +41,19 @@ int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
 int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
 {
 #ifdef URPI
-    i2c.setAddress(sa);
-    i2c.receive((unsigned char *)buf, sz);
-    
-    errno_ = i2c.fail();
+    int i = 0;
+    do
+    {
+        i2c.setAddress(sa);
+        i2c.receive((unsigned char *)buf, sz);
 
-    //printf("r: %02x: %d: ", sa,errno_);
-    //for(int i =0; i < sz; i++)
-    //    printf("%02x ", buf[i]);
-    //printf("\n");
+        errno_ = i2c.fail();
+    } while (errno_ && ++i < 10  && !usleep(1000) )
+
+    printf("r: %02x: %d: ", sa,errno_);
+    for(int i =0; i < sz; i++)
+        printf("%02x ", buf[i]);
+    printf("\n");
 
     return errno_; //i2c.fail();
 #else

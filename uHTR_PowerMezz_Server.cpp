@@ -49,7 +49,7 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
         int adChan = header.at(3);
         int bbChan = header.at(4);
 
-        printf("header: %x,%i,%i,%i,%i \n",address,mode,length,adChan,bbChan);
+        printf("****  header: %x,%i,%i,%i,%i ****\n",address,mode,length,adChan,bbChan);
         int error = 0;
         if (mode == READ || mode == WRITE)
         {
@@ -58,11 +58,11 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
             error |= rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
 
             //set board mux
-	    if(adChan >= 1 && adChan <= 4)
-	    {
-		buff = (char)(1 << bbChan);
-		error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
-	    }
+            if(adChan >= 1 && adChan <= 4)
+            {
+                buff = (char)(1 << bbChan);
+                error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
+            }
         }
 
         //switch over mode
