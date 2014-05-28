@@ -1,21 +1,38 @@
 #! /bin/sh
 # /etc/init.d/runServer.sh
-#
 
 # Some things that run always
 touch /var/lock/runServer.sh
 
+prog="runServer.sh"
+
 # Carry out specific functions when asked to by the system
+
+start() {
+    echo  "Starting $prog"
+    /home/hcal/hcalUHTR/tool/moduleCheckSUB20/uHTR_PowerMezz_Server.exe 1338 1> /tmp/mezzlog 2> /tmp/mezzerr &
+}
+
+stop() {
+    echo "Stopping $prog"
+
+    killall uHTR_PowerMezz_Server.exe
+
+}
+
 case "$1" in
     start)
-	/home/hcal/hcalUHTR/tool/moduleCheckSUB20/uHTR_PowerMezz_Server.exe 1338
-	;;
+        start
+        ;;
     stop)
-	echo "Stopping script blah"
-	echo "Could do more here"
-	;;
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
     *)
-	echo "Usage: /etc/init.d/runServer.sh {start|stop}"
-	exit 1
-	;;
+        echo "Usage: /etc/init.d/runServer.sh {start|stop|restart}"
+        exit 1
+        ;;
 esac
