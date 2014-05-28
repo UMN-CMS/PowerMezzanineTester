@@ -97,7 +97,8 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
                 std::cerr << "invalid mode\n";
                 break;
         }
-        boost::asio::write(*sock, boost::asio::buffer(&error,sizeof(error)));
+        //Error handing is hard
+        //boost::asio::write(*sock, boost::asio::buffer(&error,sizeof(error)));
     }
     catch (std::exception& e)
     {

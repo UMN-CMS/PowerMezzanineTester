@@ -26,9 +26,9 @@ int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
         i2c.send((unsigned char *)buf, sz);
 
         errno_ = i2c.fail();
-    } while (errno_ && ++i < 10 );
+    } while (errno_ && ++i < 10  && !usleep(1000));
 
-    printf("w: %02x: %d: ", sa,errno_);
+    printf("w: %02x i: %d err:%d val:", sa,i,errno_);
     for(int i =0; i < sz; i++)
         printf("%02x ", buf[i]);
     printf("\n");
@@ -53,7 +53,7 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
         errno_ = i2c.fail();
     } while (errno_ && ++i < 10  && !usleep(1000) );
 
-    printf("r: %02x: %d: ", sa,errno_);
+    printf("w: %02x i: %d err:%d val:", sa,i,errno_);
     for(int i =0; i < sz; i++)
         printf("%02x ", buf[i]);
     printf("\n");

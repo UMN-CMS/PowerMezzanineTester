@@ -295,14 +295,15 @@ int RPiInterface::recieve_error()
 {
 #ifdef URPI
     int error = 0;
-    try
-    {
-        boost::asio::read(*s, boost::asio::buffer(&error,sizeof(error)));
-    }
-    catch (std::exception& e)
-    {
-        std::cerr << "Exception in recieve_error: " << e.what() << "\n";
-    }
+    //Error handling is hard
+    //try
+    //{
+    //    boost::asio::read(*s, boost::asio::buffer(&error,sizeof(error)));
+    //}
+    //catch (std::exception& e)
+    //{
+    //    std::cerr << "Exception in recieve_error: " << e.what() << "\n";
+    //}
     return error;
 #else 
     return 0;
