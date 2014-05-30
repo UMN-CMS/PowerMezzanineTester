@@ -67,6 +67,10 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
 
         //switch over mode
         char data[max_length];
+        for(int i = 0; i < max_length; i++)
+        {
+            data[i] = 0x00;
+        }
         int ret[2];
         std::string response;
         switch (mode)
