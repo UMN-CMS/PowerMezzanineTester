@@ -209,7 +209,6 @@ void uHTRPowerMezzMenu::display()
 {
     if ( n_checks_ <=  6*5 && !(n_checks_ % 6)) 
         io::printf("Closing Interactive in %d minutes", n_checks_/6);
-    io::printf("checks %i", n_checks_);
     n_checks_--;
 
     check_voltages();
