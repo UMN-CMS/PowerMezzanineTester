@@ -10,7 +10,9 @@ prog="runServer.sh"
 
 start() {
     echo  "Starting $prog"
-    /home/hcal/hcalUHTR/tool/moduleCheckSUB20/uHTR_PowerMezz_Server.exe 1338 1> /tmp/mezzlog 2> /tmp/mezzerr &
+    modprobe -r i2c_bcm2708
+    modprobe i2c_bcm2708 baudrate=100000
+    /home/hcal/hcalUHTR/tool/moduleCheckSUB20/uHTR_PowerMezz_Server.exe 1338 1> /dev/null 2> /tmp/mezzerr &
 }
 
 stop() {
