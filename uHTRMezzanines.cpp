@@ -1218,4 +1218,5 @@ void Mezzanines::printMezzMAC()
     {
         (*iM)->printMezzMAC();
     }
+    io::printf("\n");
 }
