@@ -562,10 +562,16 @@ int uHTRPowerMezzMenu::start_test(char *responce)
 
             case 'r':
                 query_server(&selected_board_->second);
-                if(selected_board_->second.pid != 0 ) break;
-                io::set_wait(true);
-                selected_board_->second.mezzanines->readEeprom();
-                io::set_wait(false);
+                if(selected_board_->second.pid != 0 )
+                {
+                    selected_board_->second.mezzanines->printMezzMAC();
+                }
+                else
+                {
+                    io::set_wait(true);
+                    selected_board_->second.mezzanines->readEeprom();
+                    io::set_wait(false);
+                }
                 break;
             case 'w':
                 {
@@ -596,44 +602,6 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 break;
 
             case 'p':
-                /*sprintf(buff,"Program all idle boards[y,N]:");
-                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                resp = readch();
-                sprintf(buff,"                                ");
-                mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                if(resp != 'y') break;
-
-                {
-                    sprintf(buff,"Enter name[%s]:",tester);
-                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-
-                    char tstr[64];
-                    readstr(tstr);
-                    sprintf(buff,"                                     ");
-                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-
-                    if(strlen(tstr) != 0) 
-                    {
-                        sprintf(tester,"%s",tstr);
-                    }
-                    else if (strlen(tester) == 0)
-                    {
-                        sprintf(buff,"Tester must be set to start test");
-                        mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-                        break;
-                    }
-
-                    query_servers();
-
-                    for(std::map<int,Board>::iterator board = boards_.begin();
-                            board != boards_.end();
-                            board++)
-                    {
-                        if(board->second.pid != 0 || !board->second.isConnected) continue;
-
-                        board->second.mezzanines->labelAll(tester,"Minnesota");
-                    }
-		    }*/
                 break;
 
             case '?':
@@ -647,8 +615,9 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 io::printf("'d' - Disable selected board WITHOUT ASKING ANY QUESTIONS!");
                 io::printf("'r' - Read EEPROM on selected board");
                 io::printf("'w' - Write EEPROM on selected board");
-                //io::printf("'g' - Start all idle boards (Go)");
+                io::printf("'p' - Print Mac Addresses");
                 //io::printf("'p' - Program EEPROM on all idle boards");
+                //io::printf("'g' - Start all idle boards (Go)");
                 io::printf("'q' - Quit");
 
                 io::set_wait(false);

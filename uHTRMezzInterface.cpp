@@ -119,14 +119,6 @@ int uHTRMezzInterface::readMezzMAC()
 
 void uHTRMezzInterface::printMezzMAC()
 {
-    //if(isRPi_)
-    //{
-	//com->i2c_read(V2_I2C_SADDRESS_RPI_MUX, (char*)buff_, 1);
-	//int i = 0;
-	//for(; i < 8; i++) if((buff_[0] >> i)&0x1) break;
-    //io::printf("RPi adapter channel: %d\n", i);
-    //}
-
     io::printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", MAC_[0]&0xFF, MAC_[1]&0xFF, MAC_[2]&0xFF, MAC_[3]&0xFF, MAC_[4]&0xFF, MAC_[5]&0xFF);
 }
 

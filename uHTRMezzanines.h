@@ -155,6 +155,7 @@ public:
     virtual void disableMezzanine();
     virtual bool programEeprom(const std::string tester, const std::string site) = 0;
     virtual void readEeprom();
+    void printMezzMAC();
     virtual bool isPresent()
     {
         return !isNotThere;
@@ -212,6 +213,7 @@ class Mezzanines : public std::vector<Mezzanine*>
         bool labelAPM(const std::string tester, const std::string site);
         bool labelAll(const std::string tester, const std::string site);
         void readEeprom();
+        void printMezzMAC();
 
         bool arePresent();
         int init();

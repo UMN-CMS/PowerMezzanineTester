@@ -1204,3 +1204,18 @@ void Mezzanines::displayAndSleep(uHTRPowerMezzInterface& s20)
         }
     }
 }
+
+
+void Mezzanine::printMezzMAC()
+{
+    io::printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", actTest->MAC[0]&0xFF, actTest->MAC[1]&0xFF, actTest->MAC[2]&0xFF, actTest->MAC[3]&0xFF, actTest->MAC[4]&0xFF, actTest->MAC[5]&0xFF);
+}
+
+void Mezzanines::printMezzMAC()
+{
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM)
+    {
+        (*iM)->printMezzMAC();
+    }
+}
