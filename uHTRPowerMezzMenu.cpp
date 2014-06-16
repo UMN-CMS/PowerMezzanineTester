@@ -123,6 +123,8 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
     curs_set(0);
 
     io::enable_curses(yinit_ + 7 + boards_.size(), LINES - 2 ,xinit_ + 2);
+
+    n_checks_ = shutdown_time_;
 }
 
 void uHTRPowerMezzMenu::check_voltages()
@@ -205,8 +207,12 @@ void uHTRPowerMezzMenu::draw_star()
 
 void uHTRPowerMezzMenu::display()
 {
-    check_voltages();
+    if ( n_checks_ <=  6*5 && !(n_checks_ % 6)) 
+        io::printf("Closing Interactive in %d minutes", n_checks_/6);
+    io::printf("checks %i", n_checks_);
+    n_checks_--;
 
+    check_voltages();
 
     char buff[256];
     char header1[256];
@@ -214,6 +220,8 @@ void uHTRPowerMezzMenu::display()
     char header3[256];
     char bars[256];
     int x = xinit_+1 , y = 4 + yinit_;
+
+
 
     attrset(COLOR_PAIR(1));
 
@@ -392,6 +400,7 @@ void uHTRPowerMezzMenu::readstr(char str[])
 int uHTRPowerMezzMenu::start_test(char *responce)
 {
 
+    if (n_checks_ < 0) return -1;
     int key_code;
     char resp;
     if(( key_code = getch()) == ERR)
@@ -400,7 +409,8 @@ int uHTRPowerMezzMenu::start_test(char *responce)
     }
     else
     {
-	*responce = key_code;
+        n_checks_ = shutdown_time_;
+        *responce = key_code;
         char buff[64];
         switch(key_code)
         {
@@ -631,12 +641,6 @@ int uHTRPowerMezzMenu::start_test(char *responce)
 
 void uHTRPowerMezzMenu::quit()
 {
-    for(std::map<int,Board>::iterator board = boards_.begin();
-            board != boards_.end();
-            board++)
-    {
-        //Board * b =  &board->second;
-    }
     endwin();
     exit(0);
 }

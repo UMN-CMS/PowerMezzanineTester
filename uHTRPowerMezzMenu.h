@@ -43,6 +43,8 @@ class uHTRPowerMezzMenu
         const int yinit_;
         const int xinit_;
         char tester[64];
+        int n_checks_;
+        static const int shutdown_time_ = 60; 
         
 };
 
