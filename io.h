@@ -6,6 +6,8 @@ class io
 {
     public:
         static io * Instance();
+        ~io();
+
         FILE * out;
 
         static void printf(const char * fmt, ...);

@@ -25,6 +25,11 @@ enum mezzLabel
     PM1_0, PM3_3, APM1_8, APM2_5
 };
 
+enum testState
+{
+    NOM = 0, UP = 1, DOWN = -1 
+};
+
 enum ADCSwitch
 {
     ADC_28 = 0,
@@ -106,6 +111,17 @@ public:
         static void translateStatus(const unsigned int status, char *buff);
     };
 
+    struct valueCheck
+    {
+        float low;
+        float high;
+        testState state; 
+        bool operator()(float in)
+        {
+            return (low*(1+.05*int(state)) > in || high*(1+.05*int(state)) < in );
+        }
+    } tempCheck,voutCheck,powerCheck;
+
 protected:
 
     uHTRPowerMezzInterface& s20;
@@ -184,7 +200,8 @@ class APM : public Mezzanine
 class Mezzanines : public std::vector<Mezzanine*>
 {
     public:
-        Mezzanines(boost::mutex * s20mtx) : s20mtx_(s20mtx) {}
+        Mezzanines()  {}
+        ~Mezzanines();
         unsigned int monitor(bool passive = false);
         void setMargins(const int margin, const int l = 1);
         void setRun(const bool run);
@@ -201,9 +218,6 @@ class Mezzanines : public std::vector<Mezzanine*>
 
         void print();
         void displayAndSleep(uHTRPowerMezzInterface& s20);
-
-    private:
-        boost::mutex * s20mtx_;
         
 };
 #endif

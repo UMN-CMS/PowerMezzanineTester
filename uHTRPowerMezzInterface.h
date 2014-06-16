@@ -24,6 +24,7 @@ public:
     static const unsigned int EEPROM_DATA_SIZE = 128;
     
     uHTRPowerMezzInterface(int idev = 0, bool v2 = true, bool isRPi = true, const char host[] = "localhost", const char port[] = "1338");
+    ~uHTRPowerMezzInterface() {}
     void configADC128();
     double readMezzADC(const int, const int);
     double readSUB20ADC(const int);

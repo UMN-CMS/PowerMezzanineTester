@@ -62,7 +62,7 @@ uHTRPowerMezzMenu::uHTRPowerMezzMenu(std::map< int, std::string> config_lines, b
         char slot[32];
         float voltage;
         bool mezzIn[]= {false,false,false,false,false};
-        b.mezzanines = new Mezzanines(new boost::mutex());
+        b.mezzanines = new Mezzanines();
         for(std::string mezz = parseto(config_line); mezz != ""; mezz = parseto(config_line))
         {
             if(sscanf(mezz.c_str(), "%s %f\n", slot, &voltage) == 2)
@@ -202,6 +202,7 @@ void uHTRPowerMezzMenu::draw_star()
     }
 
 }
+
 void uHTRPowerMezzMenu::display()
 {
     check_voltages();
@@ -271,11 +272,18 @@ void uHTRPowerMezzMenu::display()
                     Mezzanines::iterator iM = b->mezzanines->begin();
                     for(;iM != b->mezzanines->end(); iM++)
                     {
-                        sprintf(buff,"%7.2f %7.2f %7.2f", (*iM)->actTest->temp[4], (*iM)->actTest->vout[4], (*iM)->actTest->P[4] );
-
+                        attrset(COLOR_PAIR(1 + 2*(*iM)->tempCheck((*iM)->actTest->temp[4])));
+                        sprintf(buff,"%7.2f", (*iM)->actTest->temp[4]);
                         mvaddstr(y,x,buff);
+                        attrset(COLOR_PAIR(1 + 2*(*iM)->voutCheck((*iM)->actTest->vout[4])));
+                        sprintf(buff,"%7.2f", (*iM)->actTest->vout[4]);
+                        mvaddstr(y,x+8,buff);
+                        attrset(COLOR_PAIR(1 + 2*(*iM)->powerCheck((*iM)->actTest->P[4])));
+                        sprintf(buff,"%7.2f", (*iM)->actTest->P[4] );
+                        mvaddstr(y,x+16,buff);
                         x+=25;
                     }
+                    attrset(COLOR_PAIR(1));
                     int days = b->time / 60 / 60 / 24;
                     int hours = (b->time / 60 / 60) % 24;
                     int minutes = (b->time / 60) % 60;
@@ -318,6 +326,24 @@ void uHTRPowerMezzMenu::display()
     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 }
 
+void uHTRPowerMezzMenu::query_server(Board * b)
+{
+    int ret[2];
+    b->isConnected = b->s20->can_connect();
+    if(b->isConnected)
+    {
+        b->s20->readTest(ret);
+        b->pid = ret[1];
+        b->time = ret[0];
+
+    }
+    else
+    {
+        b->pid = 0;
+        b->time = 0;
+    }
+
+}
 void uHTRPowerMezzMenu::query_servers()
 {
     for(std::map<int,Board>::iterator board = boards_.begin();
@@ -325,20 +351,7 @@ void uHTRPowerMezzMenu::query_servers()
             board++)
     {
         Board * b =  &board->second;
-        int ret[2];
-        b->isConnected = b->s20->can_connect();
-        if(b->isConnected)
-        {
-            b->s20->readTest(ret);
-            b->pid = ret[1];
-            b->time = ret[0];
-
-        }
-        else
-        {
-            b->pid = 0;
-            b->time = 0;
-        }
+        query_server(b);
     }
 }
 char uHTRPowerMezzMenu::readch()
@@ -411,7 +424,8 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 return -1;
                 break;
             case 's':
-	    case 't':
+            case 't':
+                query_server(&selected_board_->second);
                 if(selected_board_->second.pid != 0 ) break;
 
                 sprintf(buff,"Start test on board %d [y,N]:   ",selected_board_->first);
@@ -421,46 +435,32 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
                 if(resp != 'y') break;
-                {
-                    int ret[2];
-                    selected_board_->second.s20->readTest(ret);
-                    selected_board_->second.pid = ret[1];
-                    selected_board_->second.time = ret[0];
 
-                    if( selected_board_->second.pid != 0 )
+                if(key_code == 's')
+                {
+                    sprintf(buff,"Enter name[%s]:",tester);
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+
+                    char tstr[64];
+                    readstr(tstr);
+                    sprintf(buff,"                                     ");
+                    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
+                    if(strlen(tstr) != 0) 
                     {
-                        sprintf(buff,"Test already started on Board %d:",selected_board_->first);
+                        sprintf(tester,"%s",tstr);
+                    }
+                    else if (strlen(tester) == 0)
+                    {
+                        sprintf(buff,"Tester must be set to start test");
                         mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
                         break;
                     }
 
-
-		    if(key_code == 's')
-		    {
-			sprintf(buff,"Enter name[%s]:",tester);
-			mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-
-			char tstr[64];
-			readstr(tstr);
-			sprintf(buff,"                                     ");
-			mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-			if(strlen(tstr) != 0) 
-			{
-			    sprintf(tester,"%s",tstr);
-			}
-			else if (strlen(tester) == 0)
-			{
-			    sprintf(buff,"Tester must be set to start test");
-			    mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
-			    break;
-			}
-
-			selected_board_->second.mezzanines->labelAll(tester,"MINNESOTA");
-		    }
-
-                    pid_t pid = fork();
-                    if(pid == 0) return selected_board_->first;
+                    selected_board_->second.mezzanines->labelAll(tester,"MINNESOTA");
+                    usleep(100000);
                 }
+
+                if(fork() == 0) return selected_board_->first;
                 break;
             case 'k':
                 //Check if Process exists
@@ -509,11 +509,11 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                         //selected_board_->second.mezzanines->setSecondaryLoad(false, false, false, false);
                         //selected_board_->second.mezzanines->setRun(false);
                     }
-                    selected_board_->second.s20->stopTest();
                 }
                 //break;
 		// Purposeful flowthrough to 'd' DO NOT place anything between 'k' and 'd'
             case 'd':
+                io::printf("Disabling board %d", selected_board_->first);
                 selected_board_->second.mezzanines->disableMezzanines();
                 break;
             case 'g':
@@ -561,12 +561,17 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 break;
 
             case 'r':
+                query_server(&selected_board_->second);
+                if(selected_board_->second.pid != 0 ) break;
                 io::set_wait(true);
                 selected_board_->second.mezzanines->readEeprom();
                 io::set_wait(false);
                 break;
             case 'w':
                 {
+                    query_server(&selected_board_->second);
+                    if(selected_board_->second.pid != 0 ) break;
+
                     sprintf(buff,"Enter name[%s]:",tester);
                     mvaddstr(yinit_ + 5 + boards_.size(),xinit_ + 2,buff);
 
@@ -639,11 +644,11 @@ int uHTRPowerMezzMenu::start_test(char *responce)
                 io::printf("'s' - Start Short Test on selected board");
                 io::printf("'t' - Start Long Test on selected board");
                 io::printf("'k' - Kill Test on selected board");
-                io::printf("'d' - Disable selected board");
+                io::printf("'d' - Disable selected board WITHOUT ASKING ANY QUESTIONS!");
                 io::printf("'r' - Read EEPROM on selected board");
                 io::printf("'w' - Write EEPROM on selected board");
-                io::printf("'g' - Start all idle boards (Go)");
-                io::printf("'p' - Program EEPROM on all idle boards");
+                //io::printf("'g' - Start all idle boards (Go)");
+                //io::printf("'p' - Program EEPROM on all idle boards");
                 io::printf("'q' - Quit");
 
                 io::set_wait(false);

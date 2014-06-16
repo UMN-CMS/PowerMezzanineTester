@@ -90,11 +90,19 @@ void  INThandler(int sig)
     io::printf("\n***************************************** \n");
     io::printf(  "**** Turning off power to Mezzanines **** \n");
     io::printf(  "***************************************** \n");
-    active_mezzanines->setPrimaryLoad(false, false);
-    active_mezzanines->setSecondaryLoad(false, false, false, false);
-    active_mezzanines->setRun(false);
+    //active_mezzanines->setPrimaryLoad(false, false);
+    //active_mezzanines->setSecondaryLoad(false, false, false, false);
+    //active_mezzanines->setRun(false);
+    active_mezzanines->disableMezzanines();
+    delete active_mezzanines;
 
-    //active_s20->stopTest();
+    active_s20->stopTest();
+
+    io::printf("\n***************************************** \n");
+    io::printf(  "*********** Exiting gracefully ********** \n");
+    io::printf(  "***************************************** \n");
+
+    delete io::Instance();
     exit(0);
 }
 
@@ -306,8 +314,7 @@ int main(int argc, char* argv[])
     if(!(readEeproms || labelPM || labelAPM || runTest || echo || disable || enable)) interactive = true;
 
     // Initialize list of mezzanines 
-    boost::mutex s20mtx;
-    Mezzanines * mezzanines = new Mezzanines(&s20mtx);
+    Mezzanines * mezzanines = new Mezzanines();
 
     active_mezzanines = mezzanines;
 
@@ -389,9 +396,10 @@ int main(int argc, char* argv[])
             strftime (buffer,80,"%F-%R",timeinfo);
 
             char logname[64];
-            sprintf(logname, "log.%02d.%s.txt", boardID,buffer);
+            sprintf(logname, "/home/daq/MezzTest/log.%02d.%s.txt", boardID,buffer);
             FILE * log = fopen(logname, "w");
             io::Instance()->out = log;
+            stderr = log;
             break;
         }
     }
@@ -535,6 +543,7 @@ int main(int argc, char* argv[])
 
     if(runTest)
     {
+        active_s20 = &s20;
         //Handle Signal
         struct sigaction sa;
 
@@ -571,7 +580,6 @@ int main(int argc, char* argv[])
 
 int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
 {
-    active_s20 = &s20;
     int i, status;
     io::printf("Starting Mezzanine Tests...\n");
     if (mezzanines->empty()) return RETVAL_NO_MEZZ_SPEC;
@@ -643,7 +651,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     usleep(100000); //wait for output to stabalize 
 
     // This thread updates the sub20 display
-    boost::thread display(boost::bind(&Mezzanines::displayAndSleep, mezzanines, s20));
+    //boost::thread display(boost::bind(&Mezzanines::displayAndSleep, mezzanines, s20));
 
     //====================================================================
     // Set LOW voltage margins.
@@ -777,7 +785,7 @@ int test_mezzanines(uHTRPowerMezzInterface& s20, Mezzanines * mezzanines)
     //mezzanines->setPrimaryLoad(false, false);
     //mezzanines->setSecondaryLoad(false, false, false, false);
 
-    display.~thread();
+    //display.~thread();
 
     // Set final status to screen
     s20.updateSUB20Display("\fTEST\nCOMPLETE");

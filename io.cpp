@@ -6,12 +6,20 @@ io * io::m_ioInstance = NULL;
 io::io()
 {
     out = stdout;
+    stderr = out;
     isCurses = false;
     m_x = 0;
     m_y1 = 0;
     m_y2 = 0;
     m_i = 0;
 }
+
+io::~io()
+{
+    io::printf("destroying io\n");
+    fclose(out);
+}
+
 io * io::Instance()
 {
     if (!m_ioInstance )

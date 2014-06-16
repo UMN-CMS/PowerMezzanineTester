@@ -112,20 +112,20 @@ int uHTRMezzInterface::readMezzMAC()
 
     errval_ = error;
 
-    //printf("eprom read retval: %d    I2C status: %#x   buffval: %x %x %x %x %x %x\n", errval_,com->i2c_status, MAC_[0]&0xFF,MAC_[1]&0xFF,MAC_[2]&0xFF,MAC_[3]&0xFF,MAC_[4]&0xFF,MAC_[5]&0xFF);
+    //io::printf("eprom read retval: %d buffval: %x %x %x %x %x %x\n", errval_, MAC_[0]&0xFF,MAC_[1]&0xFF,MAC_[2]&0xFF,MAC_[3]&0xFF,MAC_[4]&0xFF,MAC_[5]&0xFF);
 
-    return error;
+    return !(MAC_[0] || MAC_[1] || MAC_[2] || MAC_[3] || MAC_[4] || MAC_[5]);
 }
 
 void uHTRMezzInterface::printMezzMAC()
 {
-    if(isRPi_)
-    {
-	com->i2c_read(V2_I2C_SADDRESS_RPI_MUX, (char*)buff_, 1);
-	int i = 0;
-	for(; i < 8; i++) if((buff_[0] >> i)&0x1) break;
-    io::printf("RPi adapter channel: %d\n", i);
-    }
+    //if(isRPi_)
+    //{
+	//com->i2c_read(V2_I2C_SADDRESS_RPI_MUX, (char*)buff_, 1);
+	//int i = 0;
+	//for(; i < 8; i++) if((buff_[0] >> i)&0x1) break;
+    //io::printf("RPi adapter channel: %d\n", i);
+    //}
 
     io::printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n", MAC_[0]&0xFF, MAC_[1]&0xFF, MAC_[2]&0xFF, MAC_[3]&0xFF, MAC_[4]&0xFF, MAC_[5]&0xFF);
 }

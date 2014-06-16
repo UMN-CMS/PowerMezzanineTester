@@ -29,6 +29,7 @@ class uHTRPowerMezzMenu
         uHTRPowerMezzMenu(std::map< int, std::string> config_lines, bool isV2, const char tester[] = "");
         void display();
         void query_servers();
+        void query_server(Board * b);
         void quit();
         int start_test(char *responce = 0);
 

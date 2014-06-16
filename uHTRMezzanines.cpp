@@ -17,11 +17,39 @@ Mezzanine::Mezzanine(uHTRPowerMezzInterface& s, const int muxAddress, const doub
     margDn.marg_state = -MARGIN_OFFSET;
 
     if(Mezzanine::snList.size() == 0) loadSSNFile(0);
+
+    voutCheck.state = NOM;
+    tempCheck.state = NOM;
+    powerCheck.state = NOM;
+
+    tempCheck.low   =  20.0f;
+    tempCheck.high  =  70.0f;
+
+    voutCheck.low   = vout*.98;
+    voutCheck.high  = vout*1.02;
+
+    switch(muxAddr)
+    {
+        case V2_MUX_PM_3_3:
+            powerCheck.low  = 21.0f;
+            powerCheck.high = 48.0f;
+            break;
+        case V2_MUX_PM_1_A:
+        case V2_MUX_PM_1_B:
+        case V2_MUX_APM_2_5:
+            powerCheck.low  = 12.0f;
+            powerCheck.high = 25.0f;
+            break;
+        case V2_MUX_APM_1_6:
+            powerCheck.low  = 10.0f;
+            powerCheck.high = 20.0f;
+            break;
+    }
+
 }
 
 Mezzanine::~Mezzanine()
 {
-    setRun(false);
     if(f_detail) fclose(f_detail);
 }
 
@@ -123,36 +151,34 @@ void Mezzanine::readEeprom()
     {
         if(isPM) io::printf("Power Mezzanine %s EEPROM info readback\n", slot);
         else io::printf("Aux Power Mezzanine %s EEPROM info readback\n", slot);
-        s20.printMezzMAC();
         uHTRPowerMezzInterface::EEPROM_data t_data;
         s20.readMezzEeprom(&t_data);
 
-	//deactivate power mezzanines
-	setRun(false);
+        //deactivate power mezzanines
+        setRun(false);
 
-	s20.printEEPROM_data(t_data, false);
-        io::printf("\n");
+        s20.printMezzMAC();
+        s20.printEEPROM_data(t_data, false);
     }
     else
     {
         if(isPM) io::printf("No Power Mezzanine %s Detected.\n", slot);
         else io::printf("No Aux Power Mezzanine %s Detected.\n", slot);
-	//if(s20.isRPi_)
-	//{
-	//s20.printMezzMAC();
-	//}
-	//deactivate power mezzanines
-	setRun(false);
 
-	io::printf("\n");
+        //deactivate power mezzanines
+        setRun(false);
+
     }
+    io::printf("\n");
 }
+
+const char snfname[] = "/home/daq/MezzTest/serialNumberRecord.txt";
 
 void Mezzanine::loadSSNFile(const unsigned int skipBlockSize)
 {
     FILE * f_SN = NULL;
     for(int i = 0; i < 4; i++) Mezzanine::sn_max[i] = 0;
-    if((f_SN = fopen("serialNumberRecord.txt", "r")))
+    if((f_SN = fopen(snfname, "r")))
     {
         char buff[4096];
         char *c;
@@ -199,7 +225,7 @@ unsigned int Mezzanine::getSN(const char * const cmac, const mezzLabel ml)
     {
         // This is a new SN and therefore must be added to the table
         FILE * f_SN = NULL;
-        if((f_SN = fopen("serialNumberRecord.txt", "a")))
+        if((f_SN = fopen(snfname, "a")))
         {
             sn = ++(Mezzanine::sn_max[ml]);
             Mezzanine::snList[mac] = std::make_pair(ml, sn);
@@ -240,6 +266,8 @@ void Mezzanine::Summary::translateStatus(const unsigned int status, char *error)
     else if(status & RETVAL_NO_MODLE_DETECTED)  sprintf(error, "NO MOD");
 }
 
+const char fpath[] = "/home/daq/MezzTest/";
+
 unsigned int PM::monitor(bool passive)
 {
     double p_temp = 0.0, p_vout = 0.0;
@@ -263,7 +291,7 @@ unsigned int PM::monitor(bool passive)
         if(f_detail == NULL && !passive)
         {
             char fname[128];
-            sprintf(fname, "PowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+            sprintf(fname, "%s/PowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", fpath, actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
             f_detail = fopen(fname, "a");
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_A", "V_A", "I_B", "V_B", "Total Power");
         }
@@ -315,6 +343,11 @@ unsigned int PM::monitor(bool passive)
         // Channel 2: MARG_UP
         // Channel 3: MARG_DWN
         s20.readMarginPGood(&p_margup, &p_margdn, &p_pgood);
+
+        if(p_margup) voutCheck.state = UP;
+        else if(p_margdn) voutCheck.state = DOWN;
+        else voutCheck.state = NOM;
+
         if(!passive) fprintf(f_detail, "%5d, %7d, %7d, %5d, ", p_pgood, p_margup, p_margdn, load);
 
         //--------------------------------------------------------------------
@@ -415,8 +448,7 @@ unsigned int PM::monitor(bool passive)
         {
             if(isMaybeNotThere)
             {
-                setRun(false);
-                setPrimaryLoad(false, false);
+                disableMezzanine();
                 isNotThere = true;
             }
             isMaybeNotThere = true;
@@ -474,7 +506,7 @@ unsigned int APM::monitor(bool passive)
         if(f_detail == NULL && !passive)
         {
             char fname[128];
-            sprintf(fname, "AuxPowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
+            sprintf(fname, "%s/AuxPowerMezz-%02x-%02x-%02x-%02x-%02x-%02x.txt", fpath, actTest->MAC[0]&0xff, actTest->MAC[1]&0xff, actTest->MAC[2]&0xff, actTest->MAC[3]&0xff, actTest->MAC[4]&0xff, actTest->MAC[5]&0xff);
             f_detail = fopen(fname, "a");
             fprintf(f_detail, "%25s, %17s, %7s, %9s, %5s, %7s, %7s, %5s, %9s, %9s, %9s, %9s, %9s, %9s, %9s\n", "Date", "MAC", "temp", "Vout", "PGOOD", "MARG_UP", "MARG_DN", "Load", "I_C", "V_C", "VADJ_A", "VADJ_B", "VADJ_C", "VADJ_D", "Total Power");
         }
@@ -524,6 +556,11 @@ unsigned int APM::monitor(bool passive)
         // Channel 2: MARG_UP
         // Channel 3: MARG_DWN
         s20.readMarginPGood(&a_margup, &a_margdn, &a_pgood);
+
+        if(a_margup) voutCheck.state = UP;
+        else if(a_margdn) voutCheck.state = DOWN;
+        else  voutCheck.state = NOM;
+
         if(!passive) fprintf(f_detail, "%5d, %7d, %7d, %5d, ", a_pgood, a_margup, a_margdn, load);
 
         //--------------------------------------------------------------------
@@ -606,9 +643,7 @@ unsigned int APM::monitor(bool passive)
         {
             if(isMaybeNotThere)
             {
-                setRun(false);
-                setPrimaryLoad(false, false);
-                setSecondaryLoad(false, false, false, false);
+                disableMezzanine();
                 isNotThere = true;
             }
             isMaybeNotThere = true;
@@ -986,13 +1021,21 @@ bool APM::passed()
     return (bool(actTest->pass == RETVAL_SUCCESS));
 }
 
+Mezzanines::~Mezzanines()
+{
+    std::vector<Mezzanine*>::iterator iM;
+    for(iM = begin(); iM != end(); ++iM)
+    {
+        delete (*iM);
+    }
+}
+
 unsigned int Mezzanines::monitor(bool passive)
 {
     int status = 0;
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent() && !passive) continue;
         status |= (*iM)->monitor(passive);
     }
@@ -1015,7 +1058,6 @@ void Mezzanines::setMargins(const int margin, const int l)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock lock(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         (*iM)->setMargins(margin,l);
     }
@@ -1025,7 +1067,6 @@ void Mezzanines::setRun(const bool run)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         (*iM)->setRun(run);
     }
@@ -1035,7 +1076,6 @@ void Mezzanines::setPrimaryLoad(const bool p, const bool s)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         (*iM)->setPrimaryLoad(p,s);
     }
@@ -1046,7 +1086,6 @@ void Mezzanines::setSecondaryLoad(const bool l1, const bool l2, const bool l3, c
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         if(!(*iM)->isPM) (*iM)->setSecondaryLoad(l1,l2,l3,l4);
     }
@@ -1057,7 +1096,6 @@ void Mezzanines::disableMezzanines()
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         (*iM)->disableMezzanine();
     }
 }
@@ -1068,7 +1106,6 @@ bool Mezzanines::labelAll(const std::string tester, const std::string site)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM) 
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
 
         ret |= (*iM)->programEeprom(tester, site);
@@ -1082,7 +1119,6 @@ bool Mezzanines::labelPM(const std::string tester, const std::string site)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM) 
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         if((*iM)->isPM) 
             ret |= (*iM)->programEeprom(tester, site);
@@ -1095,7 +1131,6 @@ bool Mezzanines::labelAPM(const std::string tester, const std::string site)
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM) 
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         if(!(*iM)->isPM) 
             ret |= (*iM)->programEeprom(tester, site);
@@ -1107,7 +1142,6 @@ void Mezzanines::readEeprom()
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         if(!(*iM)->isPresent()) continue;
         (*iM)->readEeprom();
     }
@@ -1120,7 +1154,6 @@ int Mezzanines::init()
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         isInit &= (*iM)->init();
     }
     return isInit;
@@ -1131,7 +1164,6 @@ void Mezzanines::print()
     std::vector<Mezzanine*>::iterator iM;
     for(iM = begin(); iM != end(); ++iM)
     {
-        boost::mutex::scoped_lock l(*s20mtx_);
         (*iM)->print();
     }
 
@@ -1151,21 +1183,18 @@ void Mezzanines::displayAndSleep(uHTRPowerMezzInterface& s20)
         {
             if(!(*iM)->isPresent()) continue;
             {
-                boost::mutex::scoped_lock l2(*s20mtx_);
                 if((*iM)->isPM) sprintf(displaybuff, "\fPM %0.1fV\nT: %0.1fC", (*iM)->VOUT_NOM, (*iM)->actTest->temp[4]);
                 else            sprintf(displaybuff, "\fAPM %0.1fV\nT: %0.1fC", (*iM)->VOUT_NOM, (*iM)->actTest->temp[4]);
                 s20.updateSUB20Display(displaybuff);
             }
             sleep(2);
             {
-                boost::mutex::scoped_lock l2(*s20mtx_);
                 if((*iM)->isPM) sprintf(displaybuff, "\fPM %0.1fV\nV: %0.2fV", (*iM)->VOUT_NOM, (*iM)->actTest->vout[4]);
                 else            sprintf(displaybuff, "\fAPM %0.1fV\nV: %0.2fV", (*iM)->VOUT_NOM, (*iM)->actTest->vout[4]);
                 s20.updateSUB20Display(displaybuff);
             }
             sleep(2);
             {
-                boost::mutex::scoped_lock l2(*s20mtx_);
                 Mezzanine::Summary::translateStatus((*iM)->actTest->pass, error);
                 if((*iM)->isPM) sprintf(displaybuff, "\fPM %0.1fV\n%s", (*iM)->VOUT_NOM, error);
                 else            sprintf(displaybuff, "\fAPM %0.1fV\n%s", (*iM)->VOUT_NOM, error);
