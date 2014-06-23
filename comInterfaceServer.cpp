@@ -1,4 +1,5 @@
 #include "comInterfaceServer.h"
+#include <ctime>
 
 
 #define RPI_MUX_SADDRESS 0x77
@@ -16,6 +17,33 @@ void RPiInterfaceServer::lcd_write(char * buf, int sz)
 #endif
 }
 
+void printCom(int err, int sa,  char buf[], int sz, char type, int i )
+{
+
+    FILE * out = stdout;
+    if(err) 
+    {
+        time_t rawtime;
+        struct tm * timeinfo;
+        char buffer [80];
+        time (&rawtime);
+        timeinfo = localtime (&rawtime);
+
+        strftime(buffer,80,"%F %X",timeinfo);
+        out = stderr;
+        fprintf(out, buffer);
+    }
+    fprintf(out,"%c: %02x i: %d err:%d val:",type,sa,i,err);
+    for(int j =0; j < sz; j++)
+    {
+        if(err) buf[j] = 0x00;
+        fprintf(out,"%02x ", buf[j]);
+    }
+    fprintf(out,"\n");
+
+    fflush(out);
+}
+
 int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
 {
 #ifdef URPI
@@ -28,16 +56,7 @@ int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
         errno_ = i2c.fail();
     } while (errno_ && ++i < 10  && !usleep(10000));
 
-    printf("w: %02x i: %d err:%d val:", sa,i,errno_);
-    for(int j =0; j < sz; j++)
-    {
-        if(errno_) buf[j] = 0x00;
-        printf("%02x ", buf[j]);
-    }
-    printf("\n");
-
-    fflush(stdout);
-
+    printCom(errno_,sa, buf,sz,'w', i);
 
     return errno_;//i2c.fail();
 #else
@@ -57,15 +76,7 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
         errno_ = i2c.fail();
     } while (errno_ && ++i < 10  && !usleep(10000) );
 
-    printf("w: %02x i: %d err:%d val:", sa,i,errno_);
-    for(int j =0; j < sz; j++)
-    {
-        if(errno_) buf[j] = 0x00;
-        printf("%02x ", buf[j]);
-    }
-    printf("\n");
-
-    fflush(stdout);
+    printCom(errno_,sa, buf,sz,'r', i);
 
     return errno_; //i2c.fail();
 #else
