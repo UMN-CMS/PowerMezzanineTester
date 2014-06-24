@@ -279,15 +279,19 @@ void uHTRPowerMezzMenu::display()
                     Mezzanines::iterator iM = b->mezzanines->begin();
                     for(;iM != b->mezzanines->end(); iM++)
                     {
-                        attrset(COLOR_PAIR(1 + 2*(*iM)->tempCheck((*iM)->actTest->temp[4])));
-                        sprintf(buff,"%7.2f", (*iM)->actTest->temp[4]);
-                        mvaddstr(y,x,buff);
-                        attrset(COLOR_PAIR(1 + 2*(*iM)->voutCheck((*iM)->actTest->vout[4])));
-                        sprintf(buff,"%7.2f", (*iM)->actTest->vout[4]);
-                        mvaddstr(y,x+8,buff);
-                        attrset(COLOR_PAIR(1 + 2*(*iM)->powerCheck((*iM)->actTest->P[4])));
-                        sprintf(buff,"%7.2f", (*iM)->actTest->P[4] );
-                        mvaddstr(y,x+16,buff);
+                        if((*iM)->isPresent())
+                        {
+                            attrset(COLOR_PAIR(1 + 2*(*iM)->tempCheck((*iM)->actTest->temp[4])));
+                            sprintf(buff,"%7.2f", (*iM)->actTest->temp[4]);
+                            mvaddstr(y,x,buff);
+                            attrset(COLOR_PAIR(1 + 2*(*iM)->voutCheck((*iM)->actTest->vout[4])));
+                            sprintf(buff,"%7.2f", (*iM)->actTest->vout[4]);
+                            mvaddstr(y,x+8,buff);
+                            attrset(COLOR_PAIR(1 + 2*(*iM)->powerCheck((*iM)->actTest->P[4])));
+                            sprintf(buff,"%7.2f", (*iM)->actTest->P[4] );
+                            mvaddstr(y,x+16,buff);
+                        }
+
                         x+=25;
                     }
                     attrset(COLOR_PAIR(1));

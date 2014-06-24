@@ -29,7 +29,7 @@ void printCom(int err, int sa,  char buf[], int sz, char type, int i )
         time (&rawtime);
         timeinfo = localtime (&rawtime);
 
-        strftime(buffer,80,"%F %X",timeinfo);
+        strftime(buffer,80,"%F %X ",timeinfo);
         out = stderr;
         fprintf(out, buffer);
     }
@@ -44,21 +44,33 @@ void printCom(int err, int sa,  char buf[], int sz, char type, int i )
     fflush(out);
 }
 
-int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz)
+int RPiInterfaceServer::i2c_write(int sa, char * buf, int sz, bool isMUX)
 {
 #ifdef URPI
     int i = 0;
+    bool match = true ;
     do
     {
         i2c.setAddress(sa);
         i2c.send((unsigned char *)buf, sz);
-
         errno_ = i2c.fail();
-    } while (errno_ && ++i < 10  && !usleep(10000));
+        if(isMUX)
+        {
+            unsigned char *tmp = new unsigned char[sz];
+            usleep(1000);
+
+            i2c.receive((unsigned char *)tmp, sz);
+            errno_ |= i2c.fail();
+
+            for(int j = 0; j < sz; ++j) match &= (buf[j] == tmp[j]);
+            
+            delete [] tmp;
+        }
+    } while ((errno_ || (isMUX && !match)) && ++i < 19 && !usleep((i < 10)?1000:10000));
 
     printCom(errno_,sa, buf,sz,'w', i);
 
-    return errno_;//i2c.fail();
+    return errno_;
 #else
     return 0;
 #endif
@@ -74,11 +86,11 @@ int RPiInterfaceServer::i2c_read(int sa, char * buf, int sz)
         i2c.receive((unsigned char *)buf, sz);
 
         errno_ = i2c.fail();
-    } while (errno_ && ++i < 10  && !usleep(10000) );
+    } while (errno_ && ++i < 19 && !usleep((i < 10)?1000:10000));
 
     printCom(errno_,sa, buf,sz,'r', i);
 
-    return errno_; //i2c.fail();
+    return errno_;
 #else
     return 0;
 #endif

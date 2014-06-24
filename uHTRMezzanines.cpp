@@ -444,15 +444,13 @@ unsigned int PM::monitor(bool passive)
     else
     {
         actTest->pass |= RETVAL_NO_MODLE_DETECTED;
-        if(!passive)
+        if(isMaybeNotThere)
         {
-            if(isMaybeNotThere)
-            {
+            if(!passive)
                 disableMezzanine();
-                isNotThere = true;
-            }
-            isMaybeNotThere = true;
+            isNotThere = true;
         }
+        isMaybeNotThere = true;
     }
 
     //--------------------------------------------------------------------
@@ -638,16 +636,13 @@ unsigned int APM::monitor(bool passive)
     else
     {
         actTest->pass |= RETVAL_NO_MODLE_DETECTED;
-
-        if(!passive)
+        if(isMaybeNotThere)
         {
-            if(isMaybeNotThere)
-            {
+            if(!passive)
                 disableMezzanine();
-                isNotThere = true;
-            }
-            isMaybeNotThere = true;
+            isNotThere = true;
         }
+        isMaybeNotThere = true;
     }
 
     //--------------------------------------------------------------------

@@ -55,13 +55,13 @@ void session(socket_ptr sock, RPiInterfaceServer& rpi )
         {
             //Set RPI Mux 
             char buff = (char)(1 << adChan);
-            error |= rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1);
+            error |= rpi.i2c_write(V2_I2C_SADDRESS_RPI_MUX, &buff, 1, true);
 
             //set board mux
             if(adChan >= 1 && adChan <= 4)
             {
                 buff = (char)(1 << bbChan);
-                error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1);
+                error |= rpi.i2c_write(V2_I2C_SADDRESS_BASE_MUX, &buff, 1, true);
             }
         }
 
